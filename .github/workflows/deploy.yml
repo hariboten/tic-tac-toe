@@ -10,8 +10,8 @@ permissions:
   contents: write
 
 concurrency:
-  group: gh-pages-production
-  cancel-in-progress: true
+  group: gh-pages-writer
+  cancel-in-progress: false
 
 jobs:
   deploy:
