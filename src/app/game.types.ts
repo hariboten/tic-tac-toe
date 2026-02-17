@@ -1,7 +1,7 @@
 export type Player = 'X' | 'O';
 export type Cell = Player | null;
 export type Winner = Player | 'DRAW' | null;
-export type AgentType = 'HUMAN' | 'RANDOM' | 'MONTE_CARLO';
+export type AgentType = 'HUMAN' | 'RANDOM' | 'MONTE_CARLO' | 'MINIMAX';
 
 export interface GameState {
   board: Cell[];
