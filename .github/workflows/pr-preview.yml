@@ -14,49 +14,44 @@ permissions:
 jobs:
   deploy-preview:
     runs-on: ubuntu-latest
+    env:
+      REPO_NAME: ${{ github.event.repository.name }}
+      PR_NUMBER: ${{ github.event.pull_request.number }}
 
     steps:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Build preview artifact
-        env:
-          PR_NUMBER: ${{ github.event.pull_request.number }}
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build app for PR preview
         run: |
-          # 後でnpm build等に置き換えやすい最小構成
-          mkdir -p dist
-          cat > dist/index.html <<HTML
-          <!doctype html>
-          <html lang="ja">
-            <head>
-              <meta charset="UTF-8" />
-              <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-              <title>PR Preview #${PR_NUMBER}</title>
-            </head>
-            <body>
-              <main style="font-family: sans-serif; padding: 24px;">
-                <h1>Preview for PR #${PR_NUMBER}</h1>
-                <p>このページは GitHub Actions による Pull Request Preview です。</p>
-              </main>
-            </body>
-          </html>
-          HTML
+          PREVIEW_BASE_HREF="/${REPO_NAME}/pr-preview/pr-${PR_NUMBER}/"
+          npm run build -- --configuration production --base-href "${PREVIEW_BASE_HREF}"
 
       - name: Deploy to gh-pages (per PR directory)
         uses: peaceiris/actions-gh-pages@v4
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           publish_branch: gh-pages
-          publish_dir: ./dist
+          # Angular build output
+          publish_dir: ./dist/tic-tac-toe/browser
           # PRごとの分離先: pr-preview/pr-123
-          destination_dir: pr-preview/pr-${{ github.event.pull_request.number }}
+          destination_dir: pr-preview/pr-${{ env.PR_NUMBER }}
           # 既存の本番ページや他PRプレビューを保持
           keep_files: true
 
       - name: Comment preview URL on PR (upsert)
         uses: actions/github-script@v7
         env:
-          PREVIEW_URL: https://${{ github.repository_owner }}.github.io/${{ github.event.repository.name }}/pr-preview/pr-${{ github.event.pull_request.number }}/
+          PREVIEW_URL: https://${{ github.repository_owner }}.github.io/${{ env.REPO_NAME }}/pr-preview/pr-${{ env.PR_NUMBER }}/
           COMMENT_MARKER: '<!-- pr-preview-url-comment -->'
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}

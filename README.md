@@ -62,8 +62,8 @@ gh-pages
 ### 実行フロー
 
 1. PR 作成/更新時に `.github/workflows/pr-preview.yml` が起動
-2. `dist/index.html` を生成（サンプル: `Preview for PR #<番号>`）
-3. `peaceiris/actions-gh-pages` で `gh-pages` の `pr-preview/pr-<番号>` へ配置
+2. Node.js セットアップ後に `npm ci` を実行し、`npm run build -- --configuration production --base-href "/<repo>/pr-preview/pr-<番号>/"` でプレビュー用にビルド
+3. `dist/tic-tac-toe/browser` を `peaceiris/actions-gh-pages` で `gh-pages` の `pr-preview/pr-<番号>` へ配置
    - `keep_files: true` により本番ページ・他PR成果物は保持
 4. `actions/github-script` で Preview URL コメントを PR に投稿
    - 既存コメントがあれば更新し、重複投稿を防止
