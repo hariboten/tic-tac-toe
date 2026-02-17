@@ -1,0 +1,97 @@
+name: PR Preview Deploy
+
+on:
+  # PR作成・更新時にプレビューを再デプロイ
+  pull_request:
+    types: [opened, synchronize, reopened]
+
+permissions:
+  # gh-pagesへのpushに必要
+  contents: write
+  # PRコメント投稿に必要
+  pull-requests: write
+
+jobs:
+  deploy-preview:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Build preview artifact
+        env:
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+        run: |
+          # 後でnpm build等に置き換えやすい最小構成
+          mkdir -p dist
+          cat > dist/index.html <<HTML
+          <!doctype html>
+          <html lang="ja">
+            <head>
+              <meta charset="UTF-8" />
+              <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+              <title>PR Preview #${PR_NUMBER}</title>
+            </head>
+            <body>
+              <main style="font-family: sans-serif; padding: 24px;">
+                <h1>Preview for PR #${PR_NUMBER}</h1>
+                <p>このページは GitHub Actions による Pull Request Preview です。</p>
+              </main>
+            </body>
+          </html>
+          HTML
+
+      - name: Deploy to gh-pages (per PR directory)
+        uses: peaceiris/actions-gh-pages@v4
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_branch: gh-pages
+          publish_dir: ./dist
+          # PRごとの分離先: pr-preview/pr-123
+          destination_dir: pr-preview/pr-${{ github.event.pull_request.number }}
+          # 既存の本番ページや他PRプレビューを保持
+          keep_files: true
+
+      - name: Comment preview URL on PR (upsert)
+        uses: actions/github-script@v7
+        env:
+          PREVIEW_URL: https://${{ github.repository_owner }}.github.io/${{ github.event.repository.name }}/pr-preview/pr-${{ github.event.pull_request.number }}/
+          COMMENT_MARKER: '<!-- pr-preview-url-comment -->'
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const marker = process.env.COMMENT_MARKER;
+            const previewUrl = process.env.PREVIEW_URL;
+            const body = `${marker}\n🚀 Preview URL:\n${previewUrl}`;
+
+            const { owner, repo } = context.repo;
+            const issue_number = context.issue.number;
+
+            const { data: comments } = await github.rest.issues.listComments({
+              owner,
+              repo,
+              issue_number,
+              per_page: 100,
+            });
+
+            // Bot自身が過去に投稿した同一マーカーコメントを検索して更新
+            const existing = comments.find((comment) =>
+              comment.user?.type === 'Bot' && comment.body?.includes(marker)
+            );
+
+            if (existing) {
+              await github.rest.issues.updateComment({
+                owner,
+                repo,
+                comment_id: existing.id,
+                body,
+              });
+            } else {
+              await github.rest.issues.createComment({
+                owner,
+                repo,
+                issue_number,
+                body,
+              });
+            }
