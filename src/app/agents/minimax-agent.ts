@@ -17,7 +17,7 @@ const scoreByWinner = (winner: Winner, player: Player): number => {
 export class MinimaxAgent implements TicTacToeAgent {
   pickMove(state: GameState, player: Player): number {
     const availableCells = getAvailableCells(state.board);
-    let bestMove = availableCells[0];
+    const bestMoves: number[] = [];
     let bestScore = Number.NEGATIVE_INFINITY;
 
     for (const cellIndex of availableCells) {
@@ -27,11 +27,19 @@ export class MinimaxAgent implements TicTacToeAgent {
       const score = this.minimax(nextBoard, nextPlayer(player), player);
       if (score > bestScore) {
         bestScore = score;
-        bestMove = cellIndex;
+        bestMoves.length = 0;
+        bestMoves.push(cellIndex);
+        continue;
+      }
+
+      if (score === bestScore) {
+        bestMoves.push(cellIndex);
       }
     }
 
-    return bestMove;
+    const randomIndex = Math.floor(Math.random() * bestMoves.length);
+
+    return bestMoves[randomIndex];
   }
 
   private minimax(board: Cell[], currentPlayer: Player, maximizingPlayer: Player): number {
