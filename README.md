@@ -12,14 +12,22 @@ npm start
 
 ## GitHub Pages デプロイ
 
-1. リポジトリ名を `tic-tac-toe` にする（base-hrefに使用）。
-2. 本番ビルドを実行。
+このリポジトリには、`main` ブランチへ push すると自動で GitHub Pages へデプロイする CI (`.github/workflows/deploy.yml`) を追加しています。
+
+### 今すぐ遊べるページ
+
+リポジトリを見に来てくれた方はこちらからどうぞ！  
+[https://hariboten.github.io/tic-tac-toe/](https://hariboten.github.io/tic-tac-toe/)
+
+### 初回に必要な GitHub 設定
+
+1. GitHub の **Settings > Pages > Build and deployment** を開く
+2. **Source** を `GitHub Actions` に設定する
+
+### ローカルでデプロイ用ビルドだけ確認する場合
 
 ```bash
 npm run build:gh-pages
 ```
 
-3. 生成された `dist/tic-tac-toe/browser` の中身を `gh-pages` ブランチへ配置して公開。
-
-GitHub Actionsを使う場合は、`dist/tic-tac-toe/browser` を Pages Artifact としてアップロードしてください。
-
+GitHub Actions では `dist/tic-tac-toe/browser` を Pages Artifact としてアップロードして公開します。
