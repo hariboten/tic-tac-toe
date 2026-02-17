@@ -46,7 +46,7 @@
     <p class="mode">{{ modeText }}</p>
   </section>
 
-  <section class="status" [ngClass]="{ finished: winner !== null }">
+  <section class="status" [ngClass]="{ finished: winner !== null, thinking: isRandomThinking }">
     {{ statusText }}
   </section>
 
