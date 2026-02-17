@@ -1,0 +1,24 @@
+<main class="container">
+  <h1>三目並べ</h1>
+  <p class="subtitle">先手・後手ともに人間プレイヤーで対戦</p>
+
+  <section class="status" [ngClass]="{ finished: winner !== null }">
+    {{ statusText }}
+  </section>
+
+  <section class="board" aria-label="tic tac toe board">
+    @for (cell of board; track $index) {
+      <button
+        class="cell"
+        [ngClass]="{ x: cell === 'X', o: cell === 'O' }"
+        (click)="play($index)"
+        [disabled]="cell !== null || winner !== null"
+        [attr.aria-label]="'マス ' + ($index + 1)"
+      >
+        {{ cell }}
+      </button>
+    }
+  </section>
+
+  <button class="reset" type="button" (click)="reset()">リセット</button>
+</main>
