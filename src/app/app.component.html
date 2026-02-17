@@ -21,6 +21,14 @@
       >
         ランダム
       </button>
+      <button
+        type="button"
+        class="agent-toggle"
+        [ngClass]="{ active: agents.X === 'MONTE_CARLO' }"
+        (click)="setAgent('X', 'MONTE_CARLO')"
+      >
+        モンテカルロ
+      </button>
     </div>
 
     <div class="agent-row">
@@ -41,12 +49,20 @@
       >
         ランダム
       </button>
+      <button
+        type="button"
+        class="agent-toggle"
+        [ngClass]="{ active: agents.O === 'MONTE_CARLO' }"
+        (click)="setAgent('O', 'MONTE_CARLO')"
+      >
+        モンテカルロ
+      </button>
     </div>
 
     <p class="mode">{{ modeText }}</p>
   </section>
 
-  <section class="status" [ngClass]="{ finished: winner !== null, thinking: isRandomThinking }">
+  <section class="status" [ngClass]="{ finished: winner !== null, thinking: isAgentThinking }">
     {{ statusText }}
   </section>
 

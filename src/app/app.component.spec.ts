@@ -30,17 +30,17 @@ describe('AppComponent', () => {
     expect(compiled.querySelectorAll('.cell').length).toBe(9);
   });
 
-  it('should switch player agent by clicking toggle button', () => {
+  it('should switch player agent to monte carlo by clicking toggle button', () => {
     const fixture = TestBed.createComponent(AppComponent);
     fixture.detectChanges();
 
     const compiled = fixture.nativeElement as HTMLElement;
-    const randomButton = compiled.querySelectorAll('.agent-row')[1]?.querySelectorAll('.agent-toggle')[1] as HTMLButtonElement;
+    const monteCarloButton = compiled.querySelectorAll('.agent-row')[1]?.querySelectorAll('.agent-toggle')[2] as HTMLButtonElement;
 
-    randomButton.click();
+    monteCarloButton.click();
     fixture.detectChanges();
 
-    expect(compiled.querySelector('.mode')?.textContent).toContain('O: ランダム');
+    expect(compiled.querySelector('.mode')?.textContent).toContain('O: モンテカルロ');
   });
 
   it('should auto play when random agent turn starts after a short delay', fakeAsync(() => {
@@ -59,4 +59,16 @@ describe('AppComponent', () => {
 
     randomSpy.mockRestore();
   }));
+
+  it('should select winning move when monte carlo agent can finish the game', () => {
+    const fixture = TestBed.createComponent(AppComponent);
+    const app = fixture.componentInstance as any;
+
+    app.board = ['O', 'O', null, 'X', 'X', null, null, null, null];
+    app.agents = { X: 'HUMAN', O: 'MONTE_CARLO' };
+
+    const pickedCell = app.pickAgentCell('O');
+
+    expect(pickedCell).toBe(2);
+  });
 });
