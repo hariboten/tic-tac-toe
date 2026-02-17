@@ -1,4 +1,4 @@
-import { Component } from '@angular/core';
+import { Component, OnDestroy } from '@angular/core';
 import { NgClass } from '@angular/common';
 
 type Player = 'X' | 'O';
@@ -12,14 +12,17 @@ type AgentType = 'HUMAN' | 'RANDOM';
   templateUrl: './app.component.html',
   styleUrl: './app.component.scss'
 })
-export class AppComponent {
+export class AppComponent implements OnDestroy {
   protected board: Cell[] = Array(9).fill(null);
   protected currentPlayer: Player = 'X';
   protected winner: Player | 'DRAW' | null = null;
+  protected isRandomThinking = false;
   protected agents: Record<Player, AgentType> = {
     X: 'HUMAN',
     O: 'HUMAN'
   };
+  private readonly randomMoveDelayMs = 550;
+  private randomMoveTimeoutId: ReturnType<typeof setTimeout> | null = null;
 
   protected get modeText(): string {
     return `X: ${this.agentLabel(this.agents.X)} / O: ${this.agentLabel(this.agents.O)}`;
@@ -38,7 +41,15 @@ export class AppComponent {
       return `勝者: ${this.winner}`;
     }
 
+    if (this.isRandomThinking) {
+      return `${this.currentPlayer} が考え中...`;
+    }
+
     return `現在の手番: ${this.currentPlayer}`;
+  }
+
+  ngOnDestroy(): void {
+    this.clearPendingRandomTurn();
   }
 
   protected setAgent(player: Player, agent: AgentType): void {
@@ -91,15 +102,35 @@ export class AppComponent {
   }
 
   protected reset(): void {
+    this.clearPendingRandomTurn();
     this.board = Array(9).fill(null);
     this.currentPlayer = 'X';
     this.winner = null;
+    this.isRandomThinking = false;
     this.triggerRandomTurn();
   }
 
   private triggerRandomTurn(): void {
-    if (!this.winner && this.agents[this.currentPlayer] === 'RANDOM') {
-      this.play(this.pickRandomCell());
+    if (!this.winner && this.agents[this.currentPlayer] === 'RANDOM' && !this.randomMoveTimeoutId) {
+      this.isRandomThinking = true;
+      this.randomMoveTimeoutId = setTimeout(() => {
+        this.randomMoveTimeoutId = null;
+
+        if (this.winner || this.agents[this.currentPlayer] !== 'RANDOM') {
+          this.isRandomThinking = false;
+          return;
+        }
+
+        this.isRandomThinking = false;
+        this.play(this.pickRandomCell());
+      }, this.randomMoveDelayMs);
+    }
+  }
+
+  private clearPendingRandomTurn(): void {
+    if (this.randomMoveTimeoutId) {
+      clearTimeout(this.randomMoveTimeoutId);
+      this.randomMoveTimeoutId = null;
     }
   }
 

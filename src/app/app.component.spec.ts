@@ -1,4 +1,4 @@
-import { TestBed } from '@angular/core/testing';
+import { TestBed, fakeAsync, tick } from '@angular/core/testing';
 import { AppComponent } from './app.component';
 
 describe('AppComponent', () => {
@@ -43,7 +43,7 @@ describe('AppComponent', () => {
     expect(compiled.querySelector('.mode')?.textContent).toContain('O: ランダム');
   });
 
-  it('should auto play when random agent turn starts', () => {
+  it('should auto play when random agent turn starts after a short delay', fakeAsync(() => {
     const randomSpy = jest.spyOn(Math, 'random').mockReturnValue(0);
 
     const fixture = TestBed.createComponent(AppComponent);
@@ -51,8 +51,12 @@ describe('AppComponent', () => {
     app.setAgent('O', 'RANDOM');
     app.play(0);
 
+    expect(app.board.filter((cell: string | null) => cell !== null).length).toBe(1);
+
+    tick(550);
+
     expect(app.board.filter((cell: string | null) => cell !== null).length).toBe(2);
 
     randomSpy.mockRestore();
-  });
+  }));
 });
