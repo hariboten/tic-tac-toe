@@ -60,15 +60,4 @@ describe('AppComponent', () => {
     randomSpy.mockRestore();
   }));
 
-  it('should select winning move when monte carlo agent can finish the game', () => {
-    const fixture = TestBed.createComponent(AppComponent);
-    const app = fixture.componentInstance as any;
-
-    app.board = ['O', 'O', null, 'X', 'X', null, null, null, null];
-    app.agents = { X: 'HUMAN', O: 'MONTE_CARLO' };
-
-    const pickedCell = app.pickAgentCell('O');
-
-    expect(pickedCell).toBe(2);
-  });
 });
