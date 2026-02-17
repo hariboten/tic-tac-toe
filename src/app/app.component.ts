@@ -3,6 +3,7 @@ import { NgClass } from '@angular/common';
 
 type Player = 'X' | 'O';
 type Cell = Player | null;
+type AgentType = 'HUMAN' | 'RANDOM';
 
 @Component({
   selector: 'app-root',
@@ -15,6 +16,18 @@ export class AppComponent {
   protected board: Cell[] = Array(9).fill(null);
   protected currentPlayer: Player = 'X';
   protected winner: Player | 'DRAW' | null = null;
+  protected agents: Record<Player, AgentType> = {
+    X: 'HUMAN',
+    O: 'HUMAN'
+  };
+
+  protected get modeText(): string {
+    return `X: ${this.agentLabel(this.agents.X)} / O: ${this.agentLabel(this.agents.O)}`;
+  }
+
+  protected get isCurrentPlayerRandom(): boolean {
+    return this.agents[this.currentPlayer] === 'RANDOM';
+  }
 
   protected get statusText(): string {
     if (this.winner === 'DRAW') {
@@ -26,6 +39,19 @@ export class AppComponent {
     }
 
     return `現在の手番: ${this.currentPlayer}`;
+  }
+
+  protected setAgent(player: Player, agent: AgentType): void {
+    if (this.agents[player] === agent) {
+      return;
+    }
+
+    this.agents = {
+      ...this.agents,
+      [player]: agent
+    };
+
+    this.reset();
   }
 
   protected play(index: number): void {
@@ -61,11 +87,33 @@ export class AppComponent {
     }
 
     this.currentPlayer = this.currentPlayer === 'X' ? 'O' : 'X';
+    this.triggerRandomTurn();
   }
 
   protected reset(): void {
     this.board = Array(9).fill(null);
     this.currentPlayer = 'X';
     this.winner = null;
+    this.triggerRandomTurn();
+  }
+
+  private triggerRandomTurn(): void {
+    if (!this.winner && this.agents[this.currentPlayer] === 'RANDOM') {
+      this.play(this.pickRandomCell());
+    }
+  }
+
+  private pickRandomCell(): number {
+    const availableCells = this.board
+      .map((cell, index) => (cell === null ? index : null))
+      .filter((index): index is number => index !== null);
+
+    const randomIndex = Math.floor(Math.random() * availableCells.length);
+
+    return availableCells[randomIndex];
+  }
+
+  private agentLabel(agent: AgentType): string {
+    return agent === 'HUMAN' ? 'ヒューマン' : 'ランダム';
   }
 }

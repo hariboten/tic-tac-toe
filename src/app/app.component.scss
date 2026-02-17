@@ -24,6 +24,50 @@ h1 {
   font-size: 0.95rem;
 }
 
+.agents {
+  padding: 0.75rem;
+  border-radius: 0.75rem;
+  background: rgba(15, 23, 42, 0.75);
+  border: 1px solid rgba(148, 163, 184, 0.3);
+  margin-bottom: 1rem;
+}
+
+.agent-row {
+  display: grid;
+  grid-template-columns: 1.5rem 1fr 1fr;
+  gap: 0.5rem;
+  align-items: center;
+  margin-bottom: 0.5rem;
+}
+
+.agent-row:last-of-type {
+  margin-bottom: 0.75rem;
+}
+
+.label {
+  font-weight: 700;
+}
+
+.agent-toggle {
+  border: 1px solid #475569;
+  border-radius: 0.5rem;
+  background: #0b1220;
+  color: #cbd5e1;
+  padding: 0.45rem;
+  font-weight: 600;
+}
+
+.agent-toggle.active {
+  border-color: #22c55e;
+  color: #22c55e;
+}
+
+.mode {
+  margin: 0;
+  color: #94a3b8;
+  font-size: 0.85rem;
+}
+
 .status {
   padding: 0.75rem;
   border-radius: 0.75rem;

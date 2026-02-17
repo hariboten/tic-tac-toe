@@ -1,6 +1,50 @@
 <main class="container">
   <h1>三目並べ</h1>
-  <p class="subtitle">先手・後手ともに人間プレイヤーで対戦</p>
+  <p class="subtitle">エージェントを切り替えて対戦</p>
+
+  <section class="agents" aria-label="player agent settings">
+    <div class="agent-row">
+      <span class="label">X</span>
+      <button
+        type="button"
+        class="agent-toggle"
+        [ngClass]="{ active: agents.X === 'HUMAN' }"
+        (click)="setAgent('X', 'HUMAN')"
+      >
+        ヒューマン
+      </button>
+      <button
+        type="button"
+        class="agent-toggle"
+        [ngClass]="{ active: agents.X === 'RANDOM' }"
+        (click)="setAgent('X', 'RANDOM')"
+      >
+        ランダム
+      </button>
+    </div>
+
+    <div class="agent-row">
+      <span class="label">O</span>
+      <button
+        type="button"
+        class="agent-toggle"
+        [ngClass]="{ active: agents.O === 'HUMAN' }"
+        (click)="setAgent('O', 'HUMAN')"
+      >
+        ヒューマン
+      </button>
+      <button
+        type="button"
+        class="agent-toggle"
+        [ngClass]="{ active: agents.O === 'RANDOM' }"
+        (click)="setAgent('O', 'RANDOM')"
+      >
+        ランダム
+      </button>
+    </div>
+
+    <p class="mode">{{ modeText }}</p>
+  </section>
 
   <section class="status" [ngClass]="{ finished: winner !== null }">
     {{ statusText }}
@@ -12,7 +56,7 @@
         class="cell"
         [ngClass]="{ x: cell === 'X', o: cell === 'O' }"
         (click)="play($index)"
-        [disabled]="cell !== null || winner !== null"
+        [disabled]="cell !== null || winner !== null || isCurrentPlayerRandom"
         [attr.aria-label]="'マス ' + ($index + 1)"
       >
         {{ cell }}
