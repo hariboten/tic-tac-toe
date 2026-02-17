@@ -22,3 +22,4 @@ npm run build:gh-pages
 3. 生成された `dist/tic-tac-toe/browser` の中身を `gh-pages` ブランチへ配置して公開。
 
 GitHub Actionsを使う場合は、`dist/tic-tac-toe/browser` を Pages Artifact としてアップロードしてください。
+
