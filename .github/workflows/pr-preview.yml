@@ -1,0 +1,108 @@
+name: Deploy PR Preview to gh-pages
+
+on:
+  pull_request:
+    branches:
+      - master
+    types:
+      - opened
+      - synchronize
+      - reopened
+      - closed
+
+permissions:
+  contents: write
+  pull-requests: write
+
+concurrency:
+  group: gh-pages-pr-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  preview:
+    runs-on: ubuntu-latest
+    env:
+      PR_NUMBER: ${{ github.event.pull_request.number }}
+      PREVIEW_PATH: pr-${{ github.event.pull_request.number }}
+      PREVIEW_URL: https://${{ github.repository_owner }}.github.io/${{ github.event.repository.name }}/pr-${{ github.event.pull_request.number }}/
+    steps:
+      - name: Checkout source
+        if: github.event.action != 'closed'
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        if: github.event.action != 'closed'
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install dependencies
+        if: github.event.action != 'closed'
+        run: npm ci
+
+      - name: Run tests
+        if: github.event.action != 'closed'
+        run: npm test
+
+      - name: Build preview app
+        if: github.event.action != 'closed'
+        run: npm run build -- --configuration production --base-href "/${{ github.event.repository.name }}/${{ env.PREVIEW_PATH }}/"
+
+      - name: Update gh-pages branch
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPOSITORY: ${{ github.repository }}
+        run: |
+          set -eux
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+          git clone --depth 1 --branch gh-pages "https://x-access-token:${GH_TOKEN}@github.com/${REPOSITORY}.git" .gh-pages \
+            || {
+              git clone --depth 1 "https://x-access-token:${GH_TOKEN}@github.com/${REPOSITORY}.git" .gh-pages
+              cd .gh-pages
+              git checkout --orphan gh-pages
+              git rm -rf . || true
+              cd ..
+            }
+
+          if [ "${{ github.event.action }}" = "closed" ]; then
+            rm -rf ".gh-pages/${PREVIEW_PATH}"
+          else
+            rm -rf ".gh-pages/${PREVIEW_PATH}"
+            mkdir -p ".gh-pages/${PREVIEW_PATH}"
+            cp -a dist/tic-tac-toe/browser/. ".gh-pages/${PREVIEW_PATH}/"
+          fi
+
+          touch .gh-pages/.nojekyll
+
+          cd .gh-pages
+          if [ -n "$(git status --porcelain)" ]; then
+            git add -A
+            if [ "${{ github.event.action }}" = "closed" ]; then
+              git commit -m "Remove preview for #${PR_NUMBER}"
+            else
+              git commit -m "Deploy preview for #${PR_NUMBER} from ${GITHUB_SHA}"
+            fi
+            git push origin gh-pages
+          else
+            echo "No changes on gh-pages"
+          fi
+
+      - name: Comment preview URL
+        if: github.event.action != 'closed'
+        uses: marocchino/sticky-pull-request-comment@v2
+        with:
+          header: preview-url
+          message: |
+            🚀 Preview URL
+            ${{ env.PREVIEW_URL }}
+
+      - name: Comment preview removal
+        if: github.event.action == 'closed'
+        uses: marocchino/sticky-pull-request-comment@v2
+        with:
+          header: preview-url
+          message: |
+            🧹 Preview environment for PR #${{ env.PR_NUMBER }} was removed.

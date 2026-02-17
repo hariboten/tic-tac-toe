@@ -1,31 +1,23 @@
-name: Deploy to GitHub Pages
+name: Deploy Production to gh-pages
 
 on:
   push:
     branches:
       - master
-  pull_request:
-    branches:
-      - master
-    types:
-      - closed
   workflow_dispatch:
 
 permissions:
-  contents: read
-  pages: write
-  id-token: write
+  contents: write
 
 concurrency:
-  group: pages
+  group: gh-pages-production
   cancel-in-progress: true
 
 jobs:
-  build:
-    if: github.event_name != 'pull_request' || github.event.pull_request.merged == true
+  deploy:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout
+      - name: Checkout source
         uses: actions/checkout@v4
 
       - name: Setup Node.js
@@ -40,24 +32,40 @@ jobs:
       - name: Run tests
         run: npm test
 
-      - name: Build app for GitHub Pages
+      - name: Build production app
         run: npm run build:gh-pages
 
-      - name: Setup Pages
-        uses: actions/configure-pages@v5
+      - name: Deploy production files to gh-pages root
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPOSITORY: ${{ github.repository }}
+        run: |
+          set -eux
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "41898282+github-actions[bot]@users.noreply.github.com"
 
-      - name: Upload artifact
-        uses: actions/upload-pages-artifact@v3
-        with:
-          path: dist/tic-tac-toe/browser
+          git clone --depth 1 --branch gh-pages "https://x-access-token:${GH_TOKEN}@github.com/${REPOSITORY}.git" .gh-pages \
+            || {
+              git clone --depth 1 "https://x-access-token:${GH_TOKEN}@github.com/${REPOSITORY}.git" .gh-pages
+              cd .gh-pages
+              git checkout --orphan gh-pages
+              git rm -rf . || true
+              cd ..
+            }
 
-  deploy:
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
-    runs-on: ubuntu-latest
-    needs: build
-    steps:
-      - name: Deploy to GitHub Pages
-        id: deployment
-        uses: actions/deploy-pages@v4
+          find .gh-pages -mindepth 1 -maxdepth 1 \
+            ! -name '.git' \
+            ! -name 'pr-*' \
+            -exec rm -rf {} +
+
+          cp -a dist/tic-tac-toe/browser/. .gh-pages/
+          touch .gh-pages/.nojekyll
+
+          cd .gh-pages
+          if [ -n "$(git status --porcelain)" ]; then
+            git add -A
+            git commit -m "Deploy production from ${GITHUB_SHA}"
+            git push origin gh-pages
+          else
+            echo "No changes to deploy"
+          fi

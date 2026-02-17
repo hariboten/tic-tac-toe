@@ -10,24 +10,63 @@ npm install
 npm start
 ```
 
-## GitHub Pages デプロイ
+## GitHub Pages デプロイ（本番 + Pull Request Preview）
 
-このリポジトリには、`main` ブランチへ push すると自動で GitHub Pages へデプロイする CI (`.github/workflows/deploy.yml`) を追加しています。
+このリポジトリでは `gh-pages` ブランチに対して GitHub Actions でデプロイします。
 
-### 今すぐ遊べるページ
+- 本番: `master` への push で `gh-pages` のルート (`/`) を更新
+- PR Preview: `gh-pages/pr-<PR番号>/` を更新
+- PRクローズ時: `gh-pages/pr-<PR番号>/` を削除
 
-リポジトリを見に来てくれた方はこちらからどうぞ！  
+本番デプロイ時は `pr-*` ディレクトリを保持するため、本番とPreviewが干渉しない構成です。
+
+### 公開URL
+
+- 本番: `https://<owner>.github.io/<repo>/`
+- PR Preview: `https://<owner>.github.io/<repo>/pr-<PR番号>/`
+
+例（このリポジトリ）:  
 [https://hariboten.github.io/tic-tac-toe/](https://hariboten.github.io/tic-tac-toe/)
 
-### 初回に必要な GitHub 設定
+## セットアップ手順
 
-1. GitHub の **Settings > Pages > Build and deployment** を開く
-2. **Source** を `GitHub Actions` に設定する
+1. GitHub の **Settings > Pages** を開く
+2. **Build and deployment** の **Source** を **Deploy from a branch** にする
+3. **Branch** で `gh-pages` / `/ (root)` を選択して保存
+4. `master` に push して本番デプロイを確認
+5. PR を作成して Preview URL の自動コメントを確認
 
-### ローカルでデプロイ用ビルドだけ確認する場合
+## 実行フロー
+
+### 1) 本番デプロイ (`.github/workflows/deploy.yml`)
+
+- トリガー: `master` への push / 手動実行
+- 処理:
+  1. 依存関係のインストール
+  2. テスト実行
+  3. 本番ビルド（`npm run build:gh-pages`）
+  4. `gh-pages` ブランチのルートのみを更新（`pr-*` は保持）
+
+### 2) PR Preview (`.github/workflows/pr-preview.yml`)
+
+- トリガー: `pull_request` (`opened`, `synchronize`, `reopened`, `closed`)
+- 処理（opened/synchronize/reopened）:
+  1. 依存関係のインストール
+  2. テスト実行
+  3. PR専用の base href でビルド
+  4. `gh-pages/pr-<PR番号>/` を更新
+  5. PR に Preview URL を sticky コメントで投稿（重複防止）
+- 処理（closed）:
+  1. `gh-pages/pr-<PR番号>/` を削除
+  2. PR の sticky コメントを更新して削除完了を通知
+
+## Pull Request テンプレート
+
+`.github/pull_request_template.md` を追加済みです。  
+Preview URL はテンプレートに固定記述せず、Actions の自動コメントで案内します。
+
+## ローカルでデプロイ用ビルドだけ確認する場合
 
 ```bash
 npm run build:gh-pages
 ```
-
-GitHub Actions では `dist/tic-tac-toe/browser` を Pages Artifact としてアップロードして公開します。
