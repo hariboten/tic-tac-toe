@@ -1,18 +1,6 @@
-import { Cell, GameState, Player, Winner } from './game.types';
-import { evaluateWinner, getAvailableCells, nextPlayer } from './tic-tac-toe.engine';
-
-export interface TicTacToeAgent {
-  pickMove(state: GameState, player: Player): number;
-}
-
-export class RandomAgent implements TicTacToeAgent {
-  pickMove(state: GameState, _player: Player): number {
-    const availableCells = getAvailableCells(state.board);
-    const randomIndex = Math.floor(Math.random() * availableCells.length);
-
-    return availableCells[randomIndex];
-  }
-}
+import { Cell, GameState, Player, Winner } from '../game.types';
+import { evaluateWinner, getAvailableCells, nextPlayer } from '../tic-tac-toe.engine';
+import { TicTacToeAgent } from './tic-tac-toe-agent';
 
 export class MonteCarloAgent implements TicTacToeAgent {
   constructor(private readonly simulationCount: number) {}

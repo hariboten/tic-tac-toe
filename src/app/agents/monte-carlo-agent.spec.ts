@@ -1,4 +1,4 @@
-import { MonteCarloAgent } from './tic-tac-toe.agent';
+import { MonteCarloAgent } from './monte-carlo-agent';
 
 describe('MonteCarloAgent', () => {
   it('should select winning move when game can be finished immediately', () => {

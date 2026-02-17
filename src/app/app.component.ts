@@ -1,7 +1,8 @@
 import { Component, OnDestroy } from '@angular/core';
 import { NgClass } from '@angular/common';
 import { AgentType, Cell, Player, Winner } from './game.types';
-import { MonteCarloAgent, RandomAgent } from './tic-tac-toe.agent';
+import { MonteCarloAgent } from './agents/monte-carlo-agent';
+import { RandomAgent } from './agents/random-agent';
 import { TicTacToeEngine } from './tic-tac-toe.engine';
 
 @Component({
