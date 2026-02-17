@@ -43,6 +43,20 @@ describe('AppComponent', () => {
     expect(compiled.querySelector('.mode')?.textContent).toContain('O: モンテカルロ');
   });
 
+
+  it('should switch player agent to minimax by clicking toggle button', () => {
+    const fixture = TestBed.createComponent(AppComponent);
+    fixture.detectChanges();
+
+    const compiled = fixture.nativeElement as HTMLElement;
+    const minimaxButton = compiled.querySelectorAll('.agent-row')[1]?.querySelectorAll('.agent-toggle')[3] as HTMLButtonElement;
+
+    minimaxButton.click();
+    fixture.detectChanges();
+
+    expect(compiled.querySelector('.mode')?.textContent).toContain('O: ミニマックス');
+  });
+
   it('should auto play when random agent turn starts after a short delay', fakeAsync(() => {
     const randomSpy = jest.spyOn(Math, 'random').mockReturnValue(0);
 

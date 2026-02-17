@@ -29,6 +29,14 @@
       >
         モンテカルロ
       </button>
+      <button
+        type="button"
+        class="agent-toggle"
+        [ngClass]="{ active: agents.X === 'MINIMAX' }"
+        (click)="setAgent('X', 'MINIMAX')"
+      >
+        ミニマックス
+      </button>
     </div>
 
     <div class="agent-row">
@@ -56,6 +64,14 @@
         (click)="setAgent('O', 'MONTE_CARLO')"
       >
         モンテカルロ
+      </button>
+      <button
+        type="button"
+        class="agent-toggle"
+        [ngClass]="{ active: agents.O === 'MINIMAX' }"
+        (click)="setAgent('O', 'MINIMAX')"
+      >
+        ミニマックス
       </button>
     </div>
 

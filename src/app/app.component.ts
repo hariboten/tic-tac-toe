@@ -1,6 +1,7 @@
 import { Component, OnDestroy } from '@angular/core';
 import { NgClass } from '@angular/common';
 import { AgentType, Cell, Player, Winner } from './game.types';
+import { MinimaxAgent } from './agents/minimax-agent';
 import { MonteCarloAgent } from './agents/monte-carlo-agent';
 import { RandomAgent } from './agents/random-agent';
 import { TicTacToeEngine } from './tic-tac-toe.engine';
@@ -23,6 +24,7 @@ export class AppComponent implements OnDestroy {
   private readonly monteCarloSimulationCount = 700;
   private readonly engine = new TicTacToeEngine();
   private readonly randomAgent = new RandomAgent();
+  private readonly minimaxAgent = new MinimaxAgent();
   private randomMoveTimeoutId: ReturnType<typeof setTimeout> | null = null;
 
   protected get board(): Cell[] {
@@ -100,6 +102,10 @@ export class AppComponent implements OnDestroy {
       return monteCarloAgent.pickMove(this.engine.gameState, player);
     }
 
+    if (this.agents[player] === 'MINIMAX') {
+      return this.minimaxAgent.pickMove(this.engine.gameState, player);
+    }
+
     return this.randomAgent.pickMove(this.engine.gameState, player);
   }
 
@@ -133,6 +139,10 @@ export class AppComponent implements OnDestroy {
       return 'ヒューマン';
     }
 
-    return agent === 'RANDOM' ? 'ランダム' : 'モンテカルロ';
+    if (agent === 'RANDOM') {
+      return 'ランダム';
+    }
+
+    return agent === 'MONTE_CARLO' ? 'モンテカルロ' : 'ミニマックス';
   }
 }
