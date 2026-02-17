@@ -32,6 +32,11 @@ npm run snapshot:ui
 
 このリポジトリには、`main` ブランチへ push すると自動で GitHub Pages へデプロイする CI (`.github/workflows/deploy.yml`) を追加しています。
 
+### 今すぐ遊べるページ
+
+リポジトリを見に来てくれた方はこちらからどうぞ！  
+[https://hariboten.github.io/tic-tac-toe/](https://hariboten.github.io/tic-tac-toe/)
+
 ### 初回に必要な GitHub 設定
 
 1. GitHub の **Settings > Pages > Build and deployment** を開く
