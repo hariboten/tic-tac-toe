@@ -34,10 +34,16 @@ h1 {
 
 .agent-row {
   display: grid;
-  grid-template-columns: 1.5rem repeat(3, minmax(0, 1fr));
+  grid-template-columns: 1.5rem minmax(0, 1fr);
   gap: 0.5rem;
   align-items: center;
   margin-bottom: 0.5rem;
+}
+
+.agent-buttons {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.5rem;
 }
 
 .agent-row:last-of-type {
@@ -142,7 +148,10 @@ h1 {
 
 @media (max-width: 420px) {
   .agent-row {
-    grid-template-columns: 1.5rem repeat(3, minmax(0, 1fr));
+    gap: 0.4rem;
+  }
+
+  .agent-buttons {
     gap: 0.4rem;
   }
 
