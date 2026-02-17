@@ -1,0 +1,38 @@
+name: UI Snapshot
+
+on:
+  pull_request:
+    paths:
+      - 'src/**'
+      - 'scripts/take-ui-snapshot.mjs'
+      - 'scripts/setup-ui-snapshot.sh'
+      - '.github/workflows/ui-snapshot.yml'
+      - 'package.json'
+      - 'package-lock.json'
+
+jobs:
+  ui-snapshot:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Setup snapshot dependencies
+        run: npm run setup:snapshot
+
+      - name: Take UI snapshot
+        run: npm run snapshot:ui
+
+      - name: Upload snapshot artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ui-snapshot
+          path: artifacts/ui-snapshot.png
+          if-no-files-found: error

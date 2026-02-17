@@ -10,6 +10,24 @@ npm install
 npm start
 ```
 
+## UIスナップショット
+
+プルリクでUI変更をレビューしやすくするため、Playwrightで画面スナップショットを生成できます。
+
+```bash
+npm run setup:snapshot
+npm run snapshot:ui
+```
+
+- `npm run setup:snapshot` で、必要な npm 依存関係と Playwright/Chromium 依存関係をセットアップします。
+- デフォルトでは `artifacts/ui-snapshot.png` に保存されます。
+
+## Pull Request運用
+
+- UI変更を含むPRでは、`npm run setup:snapshot` の後に `npm run snapshot:ui` で最新のスクリーンショットを生成してください。
+- PR本文には `![UI snapshot](artifacts/ui-snapshot.png)` の形式で画像を添付してください。
+- 詳細は `AGENTS.md` と `.github/pull_request_template.md` を参照してください。
+
 ## GitHub Pages デプロイ
 
 このリポジトリには、`main` ブランチへ push すると自動で GitHub Pages へデプロイする CI (`.github/workflows/deploy.yml`) を追加しています。
