@@ -77,6 +77,21 @@ describe('AppComponent', () => {
     expect(compiled.querySelector('.training-message')?.textContent).toContain('エピソードを学習しました');
   }));
 
+
+  it('should show monte carlo win rate overlay on empty cells', () => {
+    const randomSpy = jest.spyOn(Math, 'random').mockReturnValue(0);
+    const fixture = TestBed.createComponent(AppComponent);
+    const app = fixture.componentInstance as any;
+
+    app.setAgent('X', 'MONTE_CARLO');
+    fixture.detectChanges();
+
+    const compiled = fixture.nativeElement as HTMLElement;
+    expect(compiled.querySelectorAll('.overlay-rate').length).toBeGreaterThan(0);
+
+    randomSpy.mockRestore();
+  });
+
   it('should auto play when random agent turn starts after a short delay', fakeAsync(() => {
     const randomSpy = jest.spyOn(Math, 'random').mockReturnValue(0);
 

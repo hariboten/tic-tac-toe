@@ -62,6 +62,9 @@
           [attr.aria-label]="'マス ' + ($index + 1)"
         >
           {{ cell }}
+          @if (showMonteCarloOverlay && overlayWinRate($index) !== null && cell === null) {
+            <span class="overlay-rate">{{ overlayWinRate($index) | number: '1.0-0' }}%</span>
+          }
         </button>
       }
     </section>

@@ -129,6 +129,7 @@ h1 {
   color: #0f172a;
   font-size: clamp(2rem, 9vw, 3rem);
   font-weight: 700;
+  position: relative;
 }
 
 .cell:disabled {
@@ -141,6 +142,19 @@ h1 {
 
 .cell.o {
   color: #dc2626;
+}
+
+.overlay-rate {
+  position: absolute;
+  left: 0.35rem;
+  top: 0.35rem;
+  padding: 0.05rem 0.3rem;
+  border-radius: 0.35rem;
+  font-size: 0.7rem;
+  line-height: 1.1;
+  font-weight: 700;
+  color: #0f172a;
+  background: rgba(34, 197, 94, 0.35);
 }
 
 .reset,
