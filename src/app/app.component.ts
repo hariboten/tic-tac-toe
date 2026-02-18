@@ -33,6 +33,8 @@ export class AppComponent implements OnDestroy {
   };
   protected trainedEpisodes = 0;
   protected trainingMessage = '未学習';
+  protected monteCarloOverlayAssistant: 'OFF' | 'MONTE_CARLO' = 'OFF';
+  protected monteCarloOverlay: Map<number, number> = new Map();
 
   private readonly randomMoveDelayMs = 550;
   private readonly monteCarloSimulationCount = 700;
@@ -61,6 +63,14 @@ export class AppComponent implements OnDestroy {
 
   protected get isCurrentPlayerRandom(): boolean {
     return this.agents[this.currentPlayer] !== 'HUMAN';
+  }
+
+  protected get showMonteCarloOverlay(): boolean {
+    return this.monteCarloOverlayAssistant === 'MONTE_CARLO' && !this.winner && this.monteCarloOverlay.size > 0;
+  }
+
+  protected get monteCarloOverlayStatusText(): string {
+    return `モンテカルロの現在局面評価（${this.currentPlayer} 視点）`;
   }
 
   protected get trainedStateCount(): number {
@@ -102,6 +112,15 @@ export class AppComponent implements OnDestroy {
     };
 
     this.reset();
+  }
+
+  protected setMonteCarloOverlayAssistant(assistant: 'OFF' | 'MONTE_CARLO'): void {
+    if (this.monteCarloOverlayAssistant === assistant) {
+      return;
+    }
+
+    this.monteCarloOverlayAssistant = assistant;
+    this.updateMonteCarloOverlay();
   }
 
   protected startTraining(): void {
@@ -176,6 +195,7 @@ export class AppComponent implements OnDestroy {
       return;
     }
 
+    this.updateMonteCarloOverlay();
     this.triggerAgentTurn();
   }
 
@@ -183,6 +203,7 @@ export class AppComponent implements OnDestroy {
     this.clearPendingRandomTurn();
     this.engine.reset();
     this.isAgentThinking = false;
+    this.updateMonteCarloOverlay();
     this.triggerAgentTurn();
   }
 
@@ -224,6 +245,7 @@ export class AppComponent implements OnDestroy {
   private triggerAgentTurn(): void {
     if (!this.winner && this.agents[this.currentPlayer] !== 'HUMAN' && !this.randomMoveTimeoutId) {
       this.isAgentThinking = true;
+      this.updateMonteCarloOverlay();
       this.randomMoveTimeoutId = setTimeout(() => {
         this.randomMoveTimeoutId = null;
 
@@ -235,7 +257,26 @@ export class AppComponent implements OnDestroy {
         this.isAgentThinking = false;
         this.play(this.pickAgentCell(this.currentPlayer));
       }, this.randomMoveDelayMs);
+      return;
     }
+
+    this.isAgentThinking = false;
+    this.updateMonteCarloOverlay();
+  }
+
+  protected overlayWinRate(index: number): number | null {
+    const rate = this.monteCarloOverlay.get(index);
+    return rate === undefined ? null : rate * 100;
+  }
+
+  private updateMonteCarloOverlay(): void {
+    if (this.winner || this.monteCarloOverlayAssistant === 'OFF') {
+      this.monteCarloOverlay = new Map();
+      return;
+    }
+
+    const monteCarloAgent = new MonteCarloAgent(this.monteCarloSimulationCount);
+    this.monteCarloOverlay = monteCarloAgent.evaluateMoveWinRates(this.engine.gameState, this.currentPlayer);
   }
 
   private clearPendingRandomTurn(): void {
