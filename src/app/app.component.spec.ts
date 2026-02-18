@@ -58,6 +58,7 @@ describe('AppComponent', () => {
 
   it('should train q-learning from agent tab', fakeAsync(() => {
     const fixture = TestBed.createComponent(AppComponent);
+    const app = fixture.componentInstance as any;
     fixture.detectChanges();
 
     const compiled = fixture.nativeElement as HTMLElement;
@@ -65,6 +66,8 @@ describe('AppComponent', () => {
 
     (tabs[1] as HTMLButtonElement).click();
     fixture.detectChanges();
+
+    app.trainingConfig.episodes = 100;
 
     const trainButton = compiled.querySelector('.train') as HTMLButtonElement;
     trainButton.click();
