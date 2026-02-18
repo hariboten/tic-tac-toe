@@ -46,6 +46,14 @@
       </div>
 
       <p class="mode">{{ modeText }}</p>
+
+      <div class="overlay-assistant">
+        <span class="overlay-assistant-label">オーバーレイ補助</span>
+        <div class="overlay-assistant-buttons">
+          <button type="button" class="agent-toggle" [ngClass]="{ active: monteCarloOverlayAssistant === 'OFF' }" (click)="setMonteCarloOverlayAssistant('OFF')">オフ</button>
+          <button type="button" class="agent-toggle" [ngClass]="{ active: monteCarloOverlayAssistant === 'MONTE_CARLO' }" (click)="setMonteCarloOverlayAssistant('MONTE_CARLO')">モンテカルロ</button>
+        </div>
+      </div>
     </section>
 
     <section class="status" [ngClass]="{ finished: winner !== null, thinking: isAgentThinking }">

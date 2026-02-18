@@ -98,6 +98,24 @@ h1 {
   font-size: 0.85rem;
 }
 
+.overlay-assistant {
+  margin-top: 0.75rem;
+  text-align: left;
+}
+
+.overlay-assistant-label {
+  display: block;
+  margin-bottom: 0.35rem;
+  color: #94a3b8;
+  font-size: 0.78rem;
+}
+
+.overlay-assistant-buttons {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.5rem;
+}
+
 .status {
   font-weight: 600;
 }

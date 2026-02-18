@@ -33,8 +33,8 @@ export class AppComponent implements OnDestroy {
   };
   protected trainedEpisodes = 0;
   protected trainingMessage = '未学習';
+  protected monteCarloOverlayAssistant: 'OFF' | 'MONTE_CARLO' = 'OFF';
   protected monteCarloOverlay: Map<number, number> = new Map();
-  protected monteCarloOverlayMode: 'CURRENT' | 'PREVIOUS' | null = null;
 
   private readonly randomMoveDelayMs = 550;
   private readonly monteCarloSimulationCount = 700;
@@ -66,15 +66,11 @@ export class AppComponent implements OnDestroy {
   }
 
   protected get showMonteCarloOverlay(): boolean {
-    return !this.winner && this.monteCarloOverlayMode !== null && this.monteCarloOverlay.size > 0;
+    return this.monteCarloOverlayAssistant === 'MONTE_CARLO' && !this.winner && this.monteCarloOverlay.size > 0;
   }
 
   protected get monteCarloOverlayStatusText(): string {
-    if (this.monteCarloOverlayMode === 'CURRENT') {
-      return 'モンテカルロの現在局面評価';
-    }
-
-    return '直前手のモンテカルロ評価（比較用）';
+    return `モンテカルロの現在局面評価（${this.currentPlayer} 視点）`;
   }
 
   protected get trainedStateCount(): number {
@@ -116,6 +112,15 @@ export class AppComponent implements OnDestroy {
     };
 
     this.reset();
+  }
+
+  protected setMonteCarloOverlayAssistant(assistant: 'OFF' | 'MONTE_CARLO'): void {
+    if (this.monteCarloOverlayAssistant === assistant) {
+      return;
+    }
+
+    this.monteCarloOverlayAssistant = assistant;
+    this.updateMonteCarloOverlay();
   }
 
   protected startTraining(): void {
@@ -205,8 +210,6 @@ export class AppComponent implements OnDestroy {
   protected pickAgentCell(player: Player): number {
     if (this.agents[player] === 'MONTE_CARLO') {
       const monteCarloAgent = new MonteCarloAgent(this.monteCarloSimulationCount);
-      this.monteCarloOverlay = monteCarloAgent.evaluateMoveWinRates(this.engine.gameState, player);
-      this.monteCarloOverlayMode = 'CURRENT';
       return monteCarloAgent.pickMove(this.engine.gameState, player);
     }
 
@@ -267,28 +270,13 @@ export class AppComponent implements OnDestroy {
   }
 
   private updateMonteCarloOverlay(): void {
-    if (this.winner) {
+    if (this.winner || this.monteCarloOverlayAssistant === 'OFF') {
       this.monteCarloOverlay = new Map();
-      this.monteCarloOverlayMode = null;
       return;
     }
 
-    if (this.agents[this.currentPlayer] === 'MONTE_CARLO') {
-      const monteCarloAgent = new MonteCarloAgent(this.monteCarloSimulationCount);
-      this.monteCarloOverlay = monteCarloAgent.evaluateMoveWinRates(this.engine.gameState, this.currentPlayer);
-      this.monteCarloOverlayMode = 'CURRENT';
-      return;
-    }
-
-    if (this.monteCarloOverlayMode === 'CURRENT' && this.monteCarloOverlay.size > 0) {
-      this.monteCarloOverlayMode = 'PREVIOUS';
-      return;
-    }
-
-    if (this.agents.X !== 'MONTE_CARLO' && this.agents.O !== 'MONTE_CARLO') {
-      this.monteCarloOverlay = new Map();
-      this.monteCarloOverlayMode = null;
-    }
+    const monteCarloAgent = new MonteCarloAgent(this.monteCarloSimulationCount);
+    this.monteCarloOverlay = monteCarloAgent.evaluateMoveWinRates(this.engine.gameState, this.currentPlayer);
   }
 
   private clearPendingRandomTurn(): void {

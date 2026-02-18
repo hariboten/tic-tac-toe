@@ -78,42 +78,45 @@ describe('AppComponent', () => {
   }));
 
 
-  it('should show monte carlo win rate overlay on empty cells', () => {
+  it('should keep overlay hidden when overlay assistant is off', () => {
+    const fixture = TestBed.createComponent(AppComponent);
+    fixture.detectChanges();
+
+    const compiled = fixture.nativeElement as HTMLElement;
+    expect(compiled.querySelectorAll('.overlay-rate').length).toBe(0);
+  });
+
+  it('should show monte carlo overlay when overlay assistant is enabled', () => {
     const randomSpy = jest.spyOn(Math, 'random').mockReturnValue(0);
     const fixture = TestBed.createComponent(AppComponent);
     const app = fixture.componentInstance as any;
 
-    app.setAgent('X', 'MONTE_CARLO');
+    app.setMonteCarloOverlayAssistant('MONTE_CARLO');
     fixture.detectChanges();
 
     const compiled = fixture.nativeElement as HTMLElement;
     expect(compiled.querySelectorAll('.overlay-rate').length).toBeGreaterThan(0);
+    expect(compiled.querySelector('.overlay-status')?.textContent).toContain('現在局面評価');
 
     randomSpy.mockRestore();
   });
 
-
-  it('should keep previous monte carlo overlay after monte carlo move', fakeAsync(() => {
+  it('should keep monte carlo overlay visible after switching turn', () => {
     const randomSpy = jest.spyOn(Math, 'random').mockReturnValue(0);
     const fixture = TestBed.createComponent(AppComponent);
     const app = fixture.componentInstance as any;
 
-    app.setAgent('X', 'MONTE_CARLO');
+    app.setMonteCarloOverlayAssistant('MONTE_CARLO');
+    app.play(0);
     fixture.detectChanges();
 
-    let compiled = fixture.nativeElement as HTMLElement;
-    expect(compiled.querySelector('.overlay-status')?.textContent).toContain('現在局面評価');
-
-    tick(550);
-    fixture.detectChanges();
-
-    compiled = fixture.nativeElement as HTMLElement;
+    const compiled = fixture.nativeElement as HTMLElement;
     expect(app.currentPlayer).toBe('O');
     expect(compiled.querySelectorAll('.overlay-rate').length).toBeGreaterThan(0);
-    expect(compiled.querySelector('.overlay-status')?.textContent).toContain('直前手');
+    expect(compiled.querySelector('.overlay-status')?.textContent).toContain('O 視点');
 
     randomSpy.mockRestore();
-  }));
+  });
 
   it('should auto play when random agent turn starts after a short delay', fakeAsync(() => {
     const randomSpy = jest.spyOn(Math, 'random').mockReturnValue(0);
