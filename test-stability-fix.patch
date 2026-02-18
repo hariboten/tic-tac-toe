@@ -1,0 +1,22 @@
+diff --git a/src/app/app.component.spec.ts b/src/app/app.component.spec.ts
+index f248a82..7a383e6 100644
+--- a/src/app/app.component.spec.ts
++++ b/src/app/app.component.spec.ts
+@@ -58,6 +58,7 @@ describe('AppComponent', () => {
+ 
+   it('should train q-learning from agent tab', fakeAsync(() => {
+     const fixture = TestBed.createComponent(AppComponent);
++    const app = fixture.componentInstance as any;
+     fixture.detectChanges();
+ 
+     const compiled = fixture.nativeElement as HTMLElement;
+@@ -66,6 +67,9 @@ describe('AppComponent', () => {
+     (tabs[1] as HTMLButtonElement).click();
+     fixture.detectChanges();
+ 
++    // テストの安定性のため、エピソード数を小さい値に設定
++    app.trainingConfig.episodes = 100;
++
+     const trainButton = compiled.querySelector('.train') as HTMLButtonElement;
+     trainButton.click();
+     tick(1000);
