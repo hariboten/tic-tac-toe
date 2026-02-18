@@ -92,6 +92,29 @@ describe('AppComponent', () => {
     randomSpy.mockRestore();
   });
 
+
+  it('should keep previous monte carlo overlay after monte carlo move', fakeAsync(() => {
+    const randomSpy = jest.spyOn(Math, 'random').mockReturnValue(0);
+    const fixture = TestBed.createComponent(AppComponent);
+    const app = fixture.componentInstance as any;
+
+    app.setAgent('X', 'MONTE_CARLO');
+    fixture.detectChanges();
+
+    let compiled = fixture.nativeElement as HTMLElement;
+    expect(compiled.querySelector('.overlay-status')?.textContent).toContain('現在局面評価');
+
+    tick(550);
+    fixture.detectChanges();
+
+    compiled = fixture.nativeElement as HTMLElement;
+    expect(app.currentPlayer).toBe('O');
+    expect(compiled.querySelectorAll('.overlay-rate').length).toBeGreaterThan(0);
+    expect(compiled.querySelector('.overlay-status')?.textContent).toContain('直前手');
+
+    randomSpy.mockRestore();
+  }));
+
   it('should auto play when random agent turn starts after a short delay', fakeAsync(() => {
     const randomSpy = jest.spyOn(Math, 'random').mockReturnValue(0);
 

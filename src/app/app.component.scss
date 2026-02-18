@@ -113,6 +113,12 @@ h1 {
   animation: pulse 1s ease-in-out infinite;
 }
 
+.overlay-status {
+  margin: -0.45rem 0 0.75rem;
+  color: #93c5fd;
+  font-size: 0.78rem;
+}
+
 .board {
   display: grid;
   grid-template-columns: repeat(3, minmax(80px, 1fr));
