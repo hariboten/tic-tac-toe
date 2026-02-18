@@ -43,7 +43,6 @@ describe('AppComponent', () => {
     expect(compiled.querySelector('.mode')?.textContent).toContain('O: モンテカルロ');
   });
 
-
   it('should switch player agent to minimax by clicking toggle button', () => {
     const fixture = TestBed.createComponent(AppComponent);
     fixture.detectChanges();
@@ -55,6 +54,23 @@ describe('AppComponent', () => {
     fixture.detectChanges();
 
     expect(compiled.querySelector('.mode')?.textContent).toContain('O: ミニマックス');
+  });
+
+  it('should train q-learning from agent tab', () => {
+    const fixture = TestBed.createComponent(AppComponent);
+    fixture.detectChanges();
+
+    const compiled = fixture.nativeElement as HTMLElement;
+    const tabs = compiled.querySelectorAll('.tab-button');
+
+    (tabs[1] as HTMLButtonElement).click();
+    fixture.detectChanges();
+
+    const trainButton = compiled.querySelector('.train') as HTMLButtonElement;
+    trainButton.click();
+    fixture.detectChanges();
+
+    expect(compiled.querySelector('.training-message')?.textContent).toContain('エピソードを学習しました');
   });
 
   it('should auto play when random agent turn starts after a short delay', fakeAsync(() => {
@@ -73,5 +89,4 @@ describe('AppComponent', () => {
 
     randomSpy.mockRestore();
   }));
-
 });

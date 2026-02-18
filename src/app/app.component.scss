@@ -6,7 +6,7 @@
 }
 
 .container {
-  max-width: 420px;
+  max-width: 460px;
   margin: 0 auto;
   padding: 1.25rem 1rem 2rem;
   text-align: center;
@@ -24,7 +24,30 @@ h1 {
   font-size: 0.95rem;
 }
 
-.agents {
+.tabs {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+}
+
+.tab-button {
+  border: 1px solid #475569;
+  border-radius: 0.65rem;
+  padding: 0.6rem;
+  background: #0b1220;
+  color: #cbd5e1;
+  font-weight: 700;
+}
+
+.tab-button.active {
+  border-color: #38bdf8;
+  color: #38bdf8;
+}
+
+.agents,
+.status,
+.training-panel {
   padding: 0.75rem;
   border-radius: 0.75rem;
   background: rgba(15, 23, 42, 0.75);
@@ -76,11 +99,6 @@ h1 {
 }
 
 .status {
-  padding: 0.75rem;
-  border-radius: 0.75rem;
-  background: rgba(15, 23, 42, 0.75);
-  border: 1px solid rgba(148, 163, 184, 0.3);
-  margin-bottom: 1rem;
   font-weight: 600;
 }
 
@@ -125,15 +143,102 @@ h1 {
   color: #dc2626;
 }
 
-.reset {
+.reset,
+.train,
+.clear {
   width: 100%;
   border: none;
   border-radius: 0.75rem;
   padding: 0.75rem 1rem;
-  background: #22c55e;
-  color: #052e16;
   font-weight: 700;
   font-size: 1rem;
+}
+
+.reset,
+.train {
+  background: #22c55e;
+  color: #052e16;
+}
+
+.training-panel {
+  text-align: left;
+}
+
+.training-panel h2 {
+  margin: 0 0 0.25rem;
+  font-size: 1.15rem;
+}
+
+.hint {
+  margin: 0 0 0.9rem;
+  color: #94a3b8;
+  font-size: 0.87rem;
+}
+
+.training-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.7rem;
+}
+
+.training-grid label {
+  display: grid;
+  gap: 0.3rem;
+  font-size: 0.8rem;
+  color: #cbd5e1;
+}
+
+.training-grid input {
+  width: 100%;
+  border: 1px solid #475569;
+  border-radius: 0.45rem;
+  background: #0b1220;
+  color: #e2e8f0;
+  padding: 0.45rem;
+}
+
+.training-actions {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.6rem;
+  margin-top: 0.9rem;
+}
+
+.clear {
+  background: #334155;
+  color: #e2e8f0;
+}
+
+.training-stats {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.6rem;
+  margin: 0.9rem 0 0;
+}
+
+.training-stats div {
+  background: rgba(15, 23, 42, 0.55);
+  border: 1px solid rgba(148, 163, 184, 0.25);
+  border-radius: 0.65rem;
+  padding: 0.6rem;
+}
+
+.training-stats dt {
+  margin: 0;
+  font-size: 0.75rem;
+  color: #94a3b8;
+}
+
+.training-stats dd {
+  margin: 0.25rem 0 0;
+  font-size: 1.1rem;
+  font-weight: 700;
+}
+
+.training-message {
+  margin: 0.8rem 0 0;
+  font-size: 0.84rem;
+  color: #cbd5e1;
 }
 
 @keyframes pulse {
@@ -151,7 +256,8 @@ h1 {
     gap: 0.4rem;
   }
 
-  .agent-buttons {
+  .agent-buttons,
+  .training-actions {
     gap: 0.4rem;
   }
 
@@ -166,7 +272,8 @@ h1 {
     padding-inline: 0.75rem;
   }
 
-  .board {
+  .board,
+  .training-grid {
     gap: 0.5rem;
   }
 }
