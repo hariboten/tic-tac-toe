@@ -16,6 +16,14 @@ describe('QLearningAgent', () => {
     expect([1, 3, 4, 5, 6, 7, 8]).toContain(pickedCell);
   });
 
+
+  it('should invert opponent state value when bootstrapping', () => {
+    const agent = new QLearningAgent() as any;
+
+    expect(agent.getOpponentValue(0.8)).toBeCloseTo(-0.8);
+    expect(agent.getOpponentValue(-0.4)).toBeCloseTo(0.4);
+  });
+
   it('should update Q-table when training', () => {
     const agent = new QLearningAgent();
 

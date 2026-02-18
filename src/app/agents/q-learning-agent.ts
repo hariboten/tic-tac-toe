@@ -68,7 +68,7 @@ export class QLearningAgent implements TicTacToeAgent {
         action,
         0,
         config.learningRate,
-        config.discountFactor * maxNextValue
+        config.discountFactor * this.getOpponentValue(maxNextValue)
       );
 
       currentPlayer = nextPlayerTurn;
@@ -106,6 +106,10 @@ export class QLearningAgent implements TicTacToeAgent {
     }
 
     return bestAction;
+  }
+
+  private getOpponentValue(opponentStateValue: number): number {
+    return -opponentStateValue;
   }
 
   private getMaxQValue(stateKey: string, availableCells: number[]): number {
