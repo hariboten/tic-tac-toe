@@ -2,103 +2,122 @@
   <h1>三目並べ</h1>
   <p class="subtitle">エージェントを切り替えて対戦</p>
 
-  <section class="agents" aria-label="player agent settings">
-    <div class="agent-row">
-      <span class="label">X</span>
-      <div class="agent-buttons">
-        <button
-          type="button"
-          class="agent-toggle"
-          [ngClass]="{ active: agents.X === 'HUMAN' }"
-          (click)="setAgent('X', 'HUMAN')"
-        >
-          ヒューマン
-        </button>
-        <button
-          type="button"
-          class="agent-toggle"
-          [ngClass]="{ active: agents.X === 'RANDOM' }"
-          (click)="setAgent('X', 'RANDOM')"
-        >
-          ランダム
-        </button>
-        <button
-          type="button"
-          class="agent-toggle"
-          [ngClass]="{ active: agents.X === 'MONTE_CARLO' }"
-          (click)="setAgent('X', 'MONTE_CARLO')"
-        >
-          モンテカルロ
-        </button>
-        <button
-          type="button"
-          class="agent-toggle"
-          [ngClass]="{ active: agents.X === 'MINIMAX' }"
-          (click)="setAgent('X', 'MINIMAX')"
-        >
-          ミニマックス
-        </button>
+  <section class="tabs" aria-label="screen tabs">
+    <button
+      type="button"
+      class="tab-button"
+      [ngClass]="{ active: activeTab === 'PLAY' }"
+      (click)="switchTab('PLAY')"
+    >
+      プレイ
+    </button>
+    <button
+      type="button"
+      class="tab-button"
+      [ngClass]="{ active: activeTab === 'AGENT' }"
+      (click)="switchTab('AGENT')"
+    >
+      エージェント
+    </button>
+  </section>
+
+  @if (activeTab === 'PLAY') {
+    <section class="agents" aria-label="player agent settings">
+      <div class="agent-row">
+        <span class="label">X</span>
+        <div class="agent-buttons">
+          <button type="button" class="agent-toggle" [ngClass]="{ active: agents.X === 'HUMAN' }" (click)="setAgent('X', 'HUMAN')">ヒューマン</button>
+          <button type="button" class="agent-toggle" [ngClass]="{ active: agents.X === 'RANDOM' }" (click)="setAgent('X', 'RANDOM')">ランダム</button>
+          <button type="button" class="agent-toggle" [ngClass]="{ active: agents.X === 'MONTE_CARLO' }" (click)="setAgent('X', 'MONTE_CARLO')">モンテカルロ</button>
+          <button type="button" class="agent-toggle" [ngClass]="{ active: agents.X === 'MINIMAX' }" (click)="setAgent('X', 'MINIMAX')">ミニマックス</button>
+          <button type="button" class="agent-toggle" [ngClass]="{ active: agents.X === 'Q_LEARNING' }" (click)="setAgent('X', 'Q_LEARNING')">Q学習</button>
+        </div>
       </div>
-    </div>
 
-    <div class="agent-row">
-      <span class="label">O</span>
-      <div class="agent-buttons">
-        <button
-          type="button"
-          class="agent-toggle"
-          [ngClass]="{ active: agents.O === 'HUMAN' }"
-          (click)="setAgent('O', 'HUMAN')"
-        >
-          ヒューマン
-        </button>
-        <button
-          type="button"
-          class="agent-toggle"
-          [ngClass]="{ active: agents.O === 'RANDOM' }"
-          (click)="setAgent('O', 'RANDOM')"
-        >
-          ランダム
-        </button>
-        <button
-          type="button"
-          class="agent-toggle"
-          [ngClass]="{ active: agents.O === 'MONTE_CARLO' }"
-          (click)="setAgent('O', 'MONTE_CARLO')"
-        >
-          モンテカルロ
-        </button>
-        <button
-          type="button"
-          class="agent-toggle"
-          [ngClass]="{ active: agents.O === 'MINIMAX' }"
-          (click)="setAgent('O', 'MINIMAX')"
-        >
-          ミニマックス
-        </button>
+      <div class="agent-row">
+        <span class="label">O</span>
+        <div class="agent-buttons">
+          <button type="button" class="agent-toggle" [ngClass]="{ active: agents.O === 'HUMAN' }" (click)="setAgent('O', 'HUMAN')">ヒューマン</button>
+          <button type="button" class="agent-toggle" [ngClass]="{ active: agents.O === 'RANDOM' }" (click)="setAgent('O', 'RANDOM')">ランダム</button>
+          <button type="button" class="agent-toggle" [ngClass]="{ active: agents.O === 'MONTE_CARLO' }" (click)="setAgent('O', 'MONTE_CARLO')">モンテカルロ</button>
+          <button type="button" class="agent-toggle" [ngClass]="{ active: agents.O === 'MINIMAX' }" (click)="setAgent('O', 'MINIMAX')">ミニマックス</button>
+          <button type="button" class="agent-toggle" [ngClass]="{ active: agents.O === 'Q_LEARNING' }" (click)="setAgent('O', 'Q_LEARNING')">Q学習</button>
+        </div>
       </div>
-    </div>
 
-    <p class="mode">{{ modeText }}</p>
-  </section>
+      <p class="mode">{{ modeText }}</p>
+    </section>
 
-  <section class="status" [ngClass]="{ finished: winner !== null, thinking: isAgentThinking }">
-    {{ statusText }}
-  </section>
+    <section class="status" [ngClass]="{ finished: winner !== null, thinking: isAgentThinking }">
+      {{ statusText }}
+    </section>
 
-  <section class="board" aria-label="tic tac toe board">
-    @for (cell of board; track $index) {
-      <button
-        class="cell"
-        [ngClass]="{ x: cell === 'X', o: cell === 'O' }"
-        (click)="play($index)"
-        [disabled]="cell !== null || winner !== null || isCurrentPlayerRandom"
-        [attr.aria-label]="'マス ' + ($index + 1)"
-      >
-        {{ cell }}
-      </button>
-    }
-  </section>
+    <section class="board" aria-label="tic tac toe board">
+      @for (cell of board; track $index) {
+        <button
+          class="cell"
+          [ngClass]="{ x: cell === 'X', o: cell === 'O' }"
+          (click)="play($index)"
+          [disabled]="cell !== null || winner !== null || isCurrentPlayerRandom"
+          [attr.aria-label]="'マス ' + ($index + 1)"
+        >
+          {{ cell }}
+        </button>
+      }
+    </section>
 
-  <button class="reset" type="button" (click)="reset()">リセット</button>
+    <button class="reset" type="button" (click)="reset()">リセット</button>
+  }
+
+  @if (activeTab === 'AGENT') {
+    <section class="training-panel" aria-label="q-learning training settings">
+      <h2>Q学習エージェント</h2>
+      <p class="hint">ここで学習したテーブルはプレイタブで「Q学習」を選ぶと使われます。</p>
+
+      <div class="training-grid">
+        <label for="episodes-input">
+          エピソード数
+          <input id="episodes-input" type="number" min="1" step="100" [(ngModel)]="trainingConfig.episodes" (ngModelChange)="updateEpisodes($event)" />
+        </label>
+        <label for="learning-rate-input">
+          学習率 (α)
+          <input id="learning-rate-input" type="number" min="0.01" max="1" step="0.01" [(ngModel)]="trainingConfig.learningRate" (ngModelChange)="updateLearningRate($event)" />
+        </label>
+        <label for="discount-factor-input">
+          割引率 (γ)
+          <input id="discount-factor-input" type="number" min="0" max="0.99" step="0.01" [(ngModel)]="trainingConfig.discountFactor" (ngModelChange)="updateDiscountFactor($event)" />
+        </label>
+        <label for="epsilon-input">
+          初期ε
+          <input id="epsilon-input" type="number" min="0" max="1" step="0.01" [(ngModel)]="trainingConfig.epsilon" (ngModelChange)="updateEpsilon($event)" />
+        </label>
+        <label for="epsilon-decay-input">
+          ε減衰
+          <input id="epsilon-decay-input" type="number" min="0.9" max="1" step="0.0001" [(ngModel)]="trainingConfig.epsilonDecay" (ngModelChange)="updateEpsilonDecay($event)" />
+        </label>
+        <label for="min-epsilon-input">
+          最小ε
+          <input id="min-epsilon-input" type="number" min="0" max="1" step="0.01" [(ngModel)]="trainingConfig.minEpsilon" (ngModelChange)="updateMinEpsilon($event)" />
+        </label>
+      </div>
+
+      <div class="training-actions">
+        <button type="button" class="train" (click)="startTraining()" [disabled]="isTraining">トレーニング開始</button>
+        <button type="button" class="clear" (click)="clearTrainingData()" [disabled]="isTraining">学習データをクリア</button>
+      </div>
+
+      <dl class="training-stats">
+        <div>
+          <dt>学習済みエピソード（現セッション）</dt>
+          <dd>{{ trainedEpisodes | number }}</dd>
+        </div>
+        <div>
+          <dt>状態数</dt>
+          <dd>{{ trainedStateCount | number }}</dd>
+        </div>
+      </dl>
+
+      <p class="training-message" [ngClass]="{ busy: isTraining }">{{ trainingMessage }}</p>
+    </section>
+  }
 </main>
