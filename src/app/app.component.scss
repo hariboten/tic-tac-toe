@@ -328,6 +328,61 @@ h1 {
   color: #cbd5e1;
 }
 
+.compare-controls input,
+.compare-controls button {
+  width: 100%;
+  border: 1px solid #475569;
+  border-radius: 0.45rem;
+  background: #0b1220;
+  color: #e2e8f0;
+  padding: 0.45rem;
+}
+
+.compare-controls button {
+  font-weight: 700;
+}
+
+.compare-controls button:disabled {
+  opacity: 0.55;
+}
+
+.matchup-panel {
+  margin-top: 0.4rem;
+  display: grid;
+  gap: 0.6rem;
+}
+
+.matchup-panel h3 {
+  margin: 0;
+  font-size: 0.92rem;
+}
+
+.matchup-message {
+  margin: 0;
+  font-size: 0.78rem;
+  color: #94a3b8;
+}
+
+.matchup-message.busy {
+  color: #38bdf8;
+}
+
+.matchup-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.74rem;
+}
+
+.matchup-table th,
+.matchup-table td {
+  border: 1px solid rgba(148, 163, 184, 0.25);
+  padding: 0.35rem;
+}
+
+.matchup-table thead th {
+  background: rgba(15, 23, 42, 0.55);
+}
+
 .profile-comparison {
   width: 100%;
   border-collapse: collapse;
