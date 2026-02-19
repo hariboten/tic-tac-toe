@@ -114,6 +114,22 @@ export class AppComponent implements OnDestroy {
     this.reset();
   }
 
+
+  protected onAgentSelect(player: Player, value: string): void {
+    if (!this.isAgentType(value)) {
+      return;
+    }
+
+    this.setAgent(player, value);
+  }
+
+  protected onOverlayAssistantSelect(value: string): void {
+    if (!this.isOverlayAssistantType(value)) {
+      return;
+    }
+
+    this.setOverlayAssistant(value);
+  }
   protected setOverlayAssistant(assistant: 'OFF' | 'MONTE_CARLO' | 'MINIMAX' | 'Q_LEARNING'): void {
     if (this.overlayAssistant === assistant) {
       return;
@@ -287,6 +303,15 @@ export class AppComponent implements OnDestroy {
     }
 
     this.monteCarloOverlay = this.qLearningAgent.evaluateMoveWinRates(this.engine.gameState, this.currentPlayer);
+  }
+
+
+  private isAgentType(value: string): value is AgentType {
+    return value === 'HUMAN' || value === 'RANDOM' || value === 'MONTE_CARLO' || value === 'MINIMAX' || value === 'Q_LEARNING';
+  }
+
+  private isOverlayAssistantType(value: string): value is 'OFF' | 'MONTE_CARLO' | 'MINIMAX' | 'Q_LEARNING' {
+    return value === 'OFF' || value === 'MONTE_CARLO' || value === 'MINIMAX' || value === 'Q_LEARNING';
   }
 
   private clearPendingRandomTurn(): void {

@@ -30,27 +30,29 @@ describe('AppComponent', () => {
     expect(compiled.querySelectorAll('.cell').length).toBe(9);
   });
 
-  it('should switch player agent to monte carlo by clicking toggle button', () => {
+  it('should switch player agent to monte carlo by changing select box', () => {
     const fixture = TestBed.createComponent(AppComponent);
     fixture.detectChanges();
 
     const compiled = fixture.nativeElement as HTMLElement;
-    const monteCarloButton = compiled.querySelectorAll('.agent-row')[1]?.querySelectorAll('.agent-toggle')[2] as HTMLButtonElement;
+    const agentSelect = compiled.querySelector('#agent-o') as HTMLSelectElement;
 
-    monteCarloButton.click();
+    agentSelect.value = 'MONTE_CARLO';
+    agentSelect.dispatchEvent(new Event('change'));
     fixture.detectChanges();
 
     expect(compiled.querySelector('.mode')?.textContent).toContain('O: モンテカルロ');
   });
 
-  it('should switch player agent to minimax by clicking toggle button', () => {
+  it('should switch player agent to minimax by changing select box', () => {
     const fixture = TestBed.createComponent(AppComponent);
     fixture.detectChanges();
 
     const compiled = fixture.nativeElement as HTMLElement;
-    const minimaxButton = compiled.querySelectorAll('.agent-row')[1]?.querySelectorAll('.agent-toggle')[3] as HTMLButtonElement;
+    const agentSelect = compiled.querySelector('#agent-o') as HTMLSelectElement;
 
-    minimaxButton.click();
+    agentSelect.value = 'MINIMAX';
+    agentSelect.dispatchEvent(new Event('change'));
     fixture.detectChanges();
 
     expect(compiled.querySelector('.mode')?.textContent).toContain('O: ミニマックス');
