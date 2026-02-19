@@ -59,13 +59,26 @@ describe('AppComponent', () => {
     expect(compiled.querySelector('.mode')?.textContent).toContain('O: ミニマックス');
   });
 
+  it('should show training workspace by default in agent tab', () => {
+    const fixture = TestBed.createComponent(AppComponent);
+    fixture.detectChanges();
+
+    const compiled = fixture.nativeElement as HTMLElement;
+    const tabs = compiled.querySelectorAll('.tabs .tab-button');
+    (tabs[1] as HTMLButtonElement).click();
+    fixture.detectChanges();
+
+    expect(compiled.querySelector('[aria-label="agent training workspace"]')).toBeTruthy();
+    expect(compiled.querySelector('[aria-label="agent data workspace"]')).toBeFalsy();
+  });
+
   it('should train q-learning from agent tab', fakeAsync(() => {
     const fixture = TestBed.createComponent(AppComponent);
     const app = fixture.componentInstance as any;
     fixture.detectChanges();
 
     const compiled = fixture.nativeElement as HTMLElement;
-    const tabs = compiled.querySelectorAll('.tab-button');
+    const tabs = compiled.querySelectorAll('.tabs .tab-button');
 
     (tabs[1] as HTMLButtonElement).click();
     fixture.detectChanges();
@@ -80,13 +93,13 @@ describe('AppComponent', () => {
     expect(compiled.querySelector('.training-message')?.textContent).toContain('エピソードを学習しました');
   }));
 
-  it('should export and import q-learning data from agent tab', fakeAsync(() => {
+  it('should export and import q-learning data from data workspace', fakeAsync(() => {
     const fixture = TestBed.createComponent(AppComponent);
     const app = fixture.componentInstance as any;
     fixture.detectChanges();
 
     const compiled = fixture.nativeElement as HTMLElement;
-    const tabs = compiled.querySelectorAll('.tab-button');
+    const tabs = compiled.querySelectorAll('.tabs .tab-button');
     (tabs[1] as HTMLButtonElement).click();
     fixture.detectChanges();
 
@@ -95,15 +108,23 @@ describe('AppComponent', () => {
     tick(1000);
     fixture.detectChanges();
 
-    const exportButton = Array.from(compiled.querySelectorAll('.training-actions button')).find((button) => button.textContent?.includes('JSONエクスポート')) as HTMLButtonElement;
+    const workspaceTabs = compiled.querySelectorAll('.agent-workspace-tabs .tab-button');
+    (workspaceTabs[1] as HTMLButtonElement).click();
+    fixture.detectChanges();
+
+    const exportButton = Array.from(compiled.querySelectorAll('.training-actions button')).find((button) =>
+      button.textContent?.includes('JSONエクスポート')
+    ) as HTMLButtonElement;
     exportButton.click();
     fixture.detectChanges();
 
     const exported = app.portableJson;
-    app.clearTrainingData();
+    app.portableJson = '';
     app.portableJson = exported;
 
-    const importButton = Array.from(compiled.querySelectorAll('.training-actions button')).find((button) => button.textContent?.includes('JSONインポート')) as HTMLButtonElement;
+    const importButton = Array.from(compiled.querySelectorAll('.training-actions button')).find((button) =>
+      button.textContent?.includes('JSONインポート')
+    ) as HTMLButtonElement;
     importButton.click();
     fixture.detectChanges();
 
@@ -111,7 +132,34 @@ describe('AppComponent', () => {
     expect(compiled.textContent).toContain('JSONから学習データを復元しました');
   }));
 
+  it('should ask confirmation before destructive training actions', () => {
+    const confirmSpy = jest.spyOn(window, 'confirm').mockReturnValue(false);
+    const fixture = TestBed.createComponent(AppComponent);
+    const app = fixture.componentInstance as any;
+    fixture.detectChanges();
 
+    app.switchTab('AGENT');
+    app.clearTrainingData();
+    app.deleteTrainingData();
+
+    expect(confirmSpy).toHaveBeenCalledTimes(2);
+    confirmSpy.mockRestore();
+  });
+
+  it('should highlight selected profile in compare workspace', () => {
+    const fixture = TestBed.createComponent(AppComponent);
+    const app = fixture.componentInstance as any;
+    fixture.detectChanges();
+
+    app.switchTab('AGENT');
+    app.setTrainingProfile('B');
+    app.setAgentWorkspaceTab('COMPARE');
+    fixture.detectChanges();
+
+    const compiled = fixture.nativeElement as HTMLElement;
+    const selectedRow = compiled.querySelector('.profile-comparison tr.selected');
+    expect(selectedRow?.textContent).toContain('プロファイル B');
+  });
 
   it('should switch overlay assistant to minimax by selecting from dropdown', () => {
     const fixture = TestBed.createComponent(AppComponent);
@@ -167,7 +215,6 @@ describe('AppComponent', () => {
 
     randomSpy.mockRestore();
   });
-
 
   it('should show minimax overlay when overlay assistant is minimax', () => {
     const fixture = TestBed.createComponent(AppComponent);
@@ -243,5 +290,4 @@ describe('AppComponent', () => {
     app.setTrainingProfile('B');
     expect(app.trainingConfig.episodes).toBe(5678);
   });
-
 });

@@ -197,6 +197,51 @@ h1 {
   font-size: 0.87rem;
 }
 
+.agent-summary {
+  display: grid;
+  gap: 0.5rem;
+  margin-bottom: 0.9rem;
+  padding: 0.6rem;
+  border: 1px solid rgba(148, 163, 184, 0.25);
+  border-radius: 0.65rem;
+  background: rgba(15, 23, 42, 0.55);
+}
+
+.summary-label {
+  display: block;
+  color: #94a3b8;
+  font-size: 0.74rem;
+}
+
+.summary-message {
+  margin: 0.2rem 0 0;
+  font-size: 0.82rem;
+}
+
+.summary-message.success {
+  color: #86efac;
+}
+
+.summary-message.warn {
+  color: #fde68a;
+}
+
+.summary-message.error {
+  color: #fca5a5;
+}
+
+.agent-workspace-tabs {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.5rem;
+  margin-bottom: 0.9rem;
+}
+
+.agent-workspace-panel {
+  display: grid;
+  gap: 0.8rem;
+}
+
 .training-grid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -223,11 +268,13 @@ h1 {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 0.6rem;
-  margin-top: 0.9rem;
 }
 
-.training-panel > label {
-  margin-top: 0.9rem;
+.training-primary-actions {
+  margin-top: 0.1rem;
+}
+
+.training-panel label {
   display: grid;
   gap: 0.4rem;
   font-size: 0.8rem;
@@ -252,7 +299,7 @@ h1 {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 0.6rem;
-  margin: 0.9rem 0 0;
+  margin: 0;
 }
 
 .training-stats div {
@@ -274,11 +321,17 @@ h1 {
   font-weight: 700;
 }
 
+.compare-controls {
+  display: grid;
+  gap: 0.4rem;
+  font-size: 0.8rem;
+  color: #cbd5e1;
+}
 
 .profile-comparison {
   width: 100%;
   border-collapse: collapse;
-  margin-top: 0.9rem;
+  margin-top: 0.2rem;
   font-size: 0.78rem;
 }
 
@@ -297,6 +350,11 @@ h1 {
 .profile-comparison th {
   background: rgba(15, 23, 42, 0.55);
 }
+
+.profile-comparison tr.selected {
+  background: rgba(56, 189, 248, 0.2);
+}
+
 .training-message {
   margin: 0.8rem 0 0;
   font-size: 0.84rem;
