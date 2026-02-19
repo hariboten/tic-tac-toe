@@ -8,6 +8,18 @@ import { QLearningAgent, QLearningTrainingConfig } from './agents/q-learning-age
 import { RandomAgent } from './agents/random-agent';
 import { TicTacToeEngine } from './tic-tac-toe.engine';
 
+type QLearningProfileId = 'A' | 'B' | 'C';
+type OverlayAssistantType = 'OFF' | 'MONTE_CARLO' | 'MINIMAX' | 'Q_LEARNING';
+
+type QLearningProfile = {
+  id: QLearningProfileId;
+  label: string;
+  agent: QLearningAgent;
+  trainingConfig: QLearningTrainingConfig;
+  trainingMessage: string;
+  trainedEpisodes: number;
+};
+
 @Component({
   selector: 'app-root',
   standalone: true,
@@ -30,35 +42,31 @@ export class AppComponent implements OnInit, OnDestroy {
   protected activeTab: 'PLAY' | 'AGENT' = 'PLAY';
   protected isAgentThinking = false;
   protected isTraining = false;
-  protected trainingConfig: QLearningTrainingConfig = {
-    episodes: 10000,
-    learningRate: 0.15,
-    discountFactor: 0.95,
-    epsilon: 1,
-    epsilonDecay: 0.9997,
-    minEpsilon: 0.05
-  };
-  protected trainedEpisodes = 0;
-  protected trainingMessage = '未学習';
+  protected selectedTrainingProfileId: QLearningProfileId = 'A';
+  protected selectedPlayProfileId: QLearningProfileId = 'A';
   protected persistenceMessage = '保存データ未読み込み';
   protected portableJson = '';
-  protected readonly availableOverlayAssistants: Array<{ value: 'OFF' | 'MONTE_CARLO' | 'MINIMAX' | 'Q_LEARNING'; label: string }> = [
+  protected readonly availableOverlayAssistants: Array<{ value: OverlayAssistantType; label: string }> = [
     { value: 'OFF', label: 'オフ' },
     { value: 'MONTE_CARLO', label: 'モンテカルロ' },
     { value: 'MINIMAX', label: 'ミニマックス' },
     { value: 'Q_LEARNING', label: 'Q学習' }
   ];
-  protected overlayAssistant: 'OFF' | 'MONTE_CARLO' | 'MINIMAX' | 'Q_LEARNING' = 'OFF';
+  protected overlayAssistant: OverlayAssistantType = 'OFF';
   protected monteCarloOverlay: Map<number, number> = new Map();
 
   private readonly randomMoveDelayMs = 550;
   private readonly monteCarloSimulationCount = 700;
   private readonly trainingChunkSize = 500;
-  private readonly qLearningStorageKey = 'tic-tac-toe.q-learning.v1';
+  private readonly qLearningStorageKeyPrefix = 'tic-tac-toe.q-learning.v2.profile';
   private readonly engine = new TicTacToeEngine();
   private readonly randomAgent = new RandomAgent();
   private readonly minimaxAgent = new MinimaxAgent();
-  private readonly qLearningAgent = new QLearningAgent();
+  private readonly qLearningProfiles: QLearningProfile[] = [
+    this.createProfile('A', 'プロファイル A'),
+    this.createProfile('B', 'プロファイル B'),
+    this.createProfile('C', 'プロファイル C')
+  ];
   private randomMoveTimeoutId: ReturnType<typeof setTimeout> | null = null;
 
   protected get board(): Cell[] {
@@ -89,19 +97,59 @@ export class AppComponent implements OnInit, OnDestroy {
     return `${this.overlayAssistantLabel()}の現在局面評価（${this.currentPlayer} 視点）`;
   }
 
+  protected get trainingProfiles(): Array<{ id: QLearningProfileId; label: string }> {
+    return this.qLearningProfiles.map(({ id, label }) => ({ id, label }));
+  }
+
+  protected get selectedTrainingProfile(): QLearningProfile {
+    return this.profileById(this.selectedTrainingProfileId);
+  }
+
+  protected get selectedPlayProfile(): QLearningProfile {
+    return this.profileById(this.selectedPlayProfileId);
+  }
+
+  protected get trainingConfig(): QLearningTrainingConfig {
+    return this.selectedTrainingProfile.trainingConfig;
+  }
+
+  protected get trainingMessage(): string {
+    return this.selectedTrainingProfile.trainingMessage;
+  }
+
+  protected get trainedEpisodes(): number {
+    return this.selectedTrainingProfile.trainedEpisodes;
+  }
+
   protected get trainedStateCount(): number {
-    return this.qLearningAgent.tableSize;
+    return this.selectedTrainingProfile.agent.tableSize;
   }
 
   protected get totalTrainedEpisodes(): number {
-    return this.qLearningAgent.totalTrainedEpisodes;
+    return this.selectedTrainingProfile.agent.totalTrainedEpisodes;
+  }
+
+  protected get profileSummaries(): Array<{ label: string; totalEpisodes: number; stateCount: number; message: string }> {
+    return this.qLearningProfiles.map((profile) => ({
+      label: profile.label,
+      totalEpisodes: profile.agent.totalTrainedEpisodes,
+      stateCount: profile.agent.tableSize,
+      message: profile.trainingMessage
+    }));
   }
 
   ngOnInit(): void {
-    const loadResult = this.qLearningAgent.loadFromStorage(this.qLearningStorageKey);
-    this.persistenceMessage = loadResult.ok
-      ? `自動復元に成功しました。${loadResult.message}`
-      : `自動復元をスキップしました。${loadResult.message}`;
+    const messages = this.qLearningProfiles.map((profile) => {
+      const loadResult = profile.agent.loadFromStorage(this.storageKey(profile.id));
+      if (loadResult.ok) {
+        profile.trainingMessage = '保存データから学習結果を復元しました';
+      }
+
+      profile.trainedEpisodes = profile.agent.totalTrainedEpisodes;
+      return `${profile.label}: ${loadResult.ok ? '復元成功' : '復元なし'}（${loadResult.message}）`;
+    });
+
+    this.persistenceMessage = `自動復元結果: ${messages.join(' / ')}`;
   }
 
   protected get statusText(): string {
@@ -141,7 +189,7 @@ export class AppComponent implements OnInit, OnDestroy {
     this.reset();
   }
 
-  protected setOverlayAssistant(assistant: 'OFF' | 'MONTE_CARLO' | 'MINIMAX' | 'Q_LEARNING'): void {
+  protected setOverlayAssistant(assistant: OverlayAssistantType): void {
     if (this.overlayAssistant === assistant) {
       return;
     }
@@ -150,31 +198,45 @@ export class AppComponent implements OnInit, OnDestroy {
     this.updateOverlay();
   }
 
+  protected setTrainingProfile(profileId: QLearningProfileId): void {
+    this.selectedTrainingProfileId = profileId;
+  }
+
+  protected setPlayProfile(profileId: QLearningProfileId): void {
+    if (this.selectedPlayProfileId === profileId) {
+      return;
+    }
+
+    this.selectedPlayProfileId = profileId;
+    this.updateOverlay();
+  }
+
   protected startTraining(): void {
     if (this.isTraining) {
       return;
     }
 
-    const sanitized = this.sanitizeTrainingConfig(this.trainingConfig);
-    this.trainingConfig = sanitized;
+    const profile = this.selectedTrainingProfile;
+    const sanitized = this.sanitizeTrainingConfig(profile.trainingConfig);
+    profile.trainingConfig = sanitized;
     this.isTraining = true;
-    this.trainingMessage = 'トレーニング中...';
+    profile.trainingMessage = 'トレーニング中...';
 
     let remainingEpisodes = sanitized.episodes;
     let epsilon = sanitized.epsilon;
 
     const runChunk = (): void => {
       const chunkEpisodes = Math.min(this.trainingChunkSize, remainingEpisodes);
-      epsilon = this.qLearningAgent.train({ ...sanitized, episodes: chunkEpisodes }, epsilon);
+      epsilon = profile.agent.train({ ...sanitized, episodes: chunkEpisodes }, epsilon);
       remainingEpisodes -= chunkEpisodes;
-      this.trainedEpisodes += chunkEpisodes;
-      this.trainingMessage = `トレーニング中... 残り ${remainingEpisodes.toLocaleString()} エピソード`;
+      profile.trainedEpisodes += chunkEpisodes;
+      profile.trainingMessage = `トレーニング中... 残り ${remainingEpisodes.toLocaleString()} エピソード`;
 
       if (remainingEpisodes <= 0) {
         this.isTraining = false;
-        this.trainingMessage = `${sanitized.episodes.toLocaleString()} エピソードを学習しました`;
-        const saveResult = this.qLearningAgent.saveToStorage(this.qLearningStorageKey);
-        this.persistenceMessage = saveResult.message;
+        profile.trainingMessage = `${sanitized.episodes.toLocaleString()} エピソードを学習しました`;
+        const saveResult = profile.agent.saveToStorage(this.storageKey(profile.id));
+        this.persistenceMessage = `${profile.label}: ${saveResult.message}`;
         return;
       }
 
@@ -189,9 +251,10 @@ export class AppComponent implements OnInit, OnDestroy {
       return;
     }
 
-    this.qLearningAgent.clear();
-    this.trainedEpisodes = this.qLearningAgent.totalTrainedEpisodes;
-    this.trainingMessage = '学習データを削除しました';
+    const profile = this.selectedTrainingProfile;
+    profile.agent.clear();
+    profile.trainedEpisodes = profile.agent.totalTrainedEpisodes;
+    profile.trainingMessage = '学習データを削除しました';
   }
 
   protected saveTrainingData(): void {
@@ -199,8 +262,9 @@ export class AppComponent implements OnInit, OnDestroy {
       return;
     }
 
-    const result = this.qLearningAgent.saveToStorage(this.qLearningStorageKey);
-    this.persistenceMessage = result.message;
+    const profile = this.selectedTrainingProfile;
+    const result = profile.agent.saveToStorage(this.storageKey(profile.id));
+    this.persistenceMessage = `${profile.label}: ${result.message}`;
   }
 
   protected loadTrainingData(): void {
@@ -208,10 +272,11 @@ export class AppComponent implements OnInit, OnDestroy {
       return;
     }
 
-    const result = this.qLearningAgent.loadFromStorage(this.qLearningStorageKey);
-    this.trainedEpisodes = this.qLearningAgent.totalTrainedEpisodes;
-    this.trainingMessage = result.ok ? '保存データから学習結果を復元しました' : this.trainingMessage;
-    this.persistenceMessage = result.message;
+    const profile = this.selectedTrainingProfile;
+    const result = profile.agent.loadFromStorage(this.storageKey(profile.id));
+    profile.trainedEpisodes = profile.agent.totalTrainedEpisodes;
+    profile.trainingMessage = result.ok ? '保存データから学習結果を復元しました' : profile.trainingMessage;
+    this.persistenceMessage = `${profile.label}: ${result.message}`;
   }
 
   protected deleteTrainingData(): void {
@@ -219,13 +284,15 @@ export class AppComponent implements OnInit, OnDestroy {
       return;
     }
 
-    const result = this.qLearningAgent.deleteFromStorage(this.qLearningStorageKey);
-    this.persistenceMessage = result.message;
+    const profile = this.selectedTrainingProfile;
+    const result = profile.agent.deleteFromStorage(this.storageKey(profile.id));
+    this.persistenceMessage = `${profile.label}: ${result.message}`;
   }
 
   protected exportTrainingData(): void {
-    this.portableJson = this.qLearningAgent.exportToJson();
-    this.persistenceMessage = '学習データをJSONに出力しました。';
+    const profile = this.selectedTrainingProfile;
+    this.portableJson = profile.agent.exportToJson();
+    this.persistenceMessage = `${profile.label}: 学習データをJSONに出力しました。`;
   }
 
   protected importTrainingData(): void {
@@ -233,37 +300,38 @@ export class AppComponent implements OnInit, OnDestroy {
       return;
     }
 
-    const result = this.qLearningAgent.importFromJson(this.portableJson);
-    this.trainedEpisodes = this.qLearningAgent.totalTrainedEpisodes;
+    const profile = this.selectedTrainingProfile;
+    const result = profile.agent.importFromJson(this.portableJson);
+    profile.trainedEpisodes = profile.agent.totalTrainedEpisodes;
     if (result.ok) {
-      this.trainingMessage = 'JSONから学習データを復元しました';
+      profile.trainingMessage = 'JSONから学習データを復元しました';
     }
 
-    this.persistenceMessage = result.message;
+    this.persistenceMessage = `${profile.label}: ${result.message}`;
   }
 
   protected updateEpisodes(value: number): void {
-    this.trainingConfig.episodes = Math.max(1, Math.floor(value || 0));
+    this.selectedTrainingProfile.trainingConfig.episodes = Math.max(1, Math.floor(value || 0));
   }
 
   protected updateLearningRate(value: number): void {
-    this.trainingConfig.learningRate = this.clamp(value, 0.01, 1);
+    this.selectedTrainingProfile.trainingConfig.learningRate = this.clamp(value, 0.01, 1);
   }
 
   protected updateDiscountFactor(value: number): void {
-    this.trainingConfig.discountFactor = this.clamp(value, 0, 0.99);
+    this.selectedTrainingProfile.trainingConfig.discountFactor = this.clamp(value, 0, 0.99);
   }
 
   protected updateEpsilon(value: number): void {
-    this.trainingConfig.epsilon = this.clamp(value, 0, 1);
+    this.selectedTrainingProfile.trainingConfig.epsilon = this.clamp(value, 0, 1);
   }
 
   protected updateEpsilonDecay(value: number): void {
-    this.trainingConfig.epsilonDecay = this.clamp(value, 0.9, 1);
+    this.selectedTrainingProfile.trainingConfig.epsilonDecay = this.clamp(value, 0.9, 1);
   }
 
   protected updateMinEpsilon(value: number): void {
-    this.trainingConfig.minEpsilon = this.clamp(value, 0, 1);
+    this.selectedTrainingProfile.trainingConfig.minEpsilon = this.clamp(value, 0, 1);
   }
 
   protected play(index: number): void {
@@ -295,7 +363,7 @@ export class AppComponent implements OnInit, OnDestroy {
     }
 
     if (this.agents[player] === 'Q_LEARNING') {
-      return this.qLearningAgent.pickMove(this.engine.gameState, player);
+      return this.selectedPlayProfile.agent.pickMove(this.engine.gameState, player);
     }
 
     return this.randomAgent.pickMove(this.engine.gameState, player);
@@ -363,7 +431,7 @@ export class AppComponent implements OnInit, OnDestroy {
       return;
     }
 
-    this.monteCarloOverlay = this.qLearningAgent.evaluateMoveWinRates(this.engine.gameState, this.currentPlayer);
+    this.monteCarloOverlay = this.selectedPlayProfile.agent.evaluateMoveWinRates(this.engine.gameState, this.currentPlayer);
   }
 
   private clearPendingRandomTurn(): void {
@@ -390,7 +458,7 @@ export class AppComponent implements OnInit, OnDestroy {
       return 'ミニマックス';
     }
 
-    return 'Q学習';
+    return `Q学習（${this.selectedPlayProfile.label}）`;
   }
 
   private overlayAssistantLabel(): string {
@@ -403,9 +471,35 @@ export class AppComponent implements OnInit, OnDestroy {
     }
 
     if (this.overlayAssistant === 'Q_LEARNING') {
-      return 'Q学習';
+      return `Q学習 ${this.selectedPlayProfile.label}`;
     }
 
     return 'オフ';
+  }
+
+  private createProfile(id: QLearningProfileId, label: string): QLearningProfile {
+    return {
+      id,
+      label,
+      agent: new QLearningAgent(),
+      trainingConfig: {
+        episodes: 10000,
+        learningRate: 0.15,
+        discountFactor: 0.95,
+        epsilon: 1,
+        epsilonDecay: 0.9997,
+        minEpsilon: 0.05
+      },
+      trainingMessage: '未学習',
+      trainedEpisodes: 0
+    };
+  }
+
+  private profileById(profileId: QLearningProfileId): QLearningProfile {
+    return this.qLearningProfiles.find((profile) => profile.id === profileId) ?? this.qLearningProfiles[0];
+  }
+
+  private storageKey(profileId: QLearningProfileId): string {
+    return `${this.qLearningStorageKeyPrefix}.${profileId}`;
   }
 }

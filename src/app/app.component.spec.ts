@@ -209,4 +209,39 @@ describe('AppComponent', () => {
 
     randomSpy.mockRestore();
   }));
+
+  it('should switch q-learning play profile from dropdown', () => {
+    const fixture = TestBed.createComponent(AppComponent);
+    const app = fixture.componentInstance as any;
+
+    app.setAgent('O', 'Q_LEARNING');
+    fixture.detectChanges();
+
+    const compiled = fixture.nativeElement as HTMLElement;
+    const profileSelect = compiled.querySelector('#play-profile-select') as HTMLSelectElement;
+    profileSelect.value = 'B';
+    profileSelect.dispatchEvent(new Event('change'));
+    fixture.detectChanges();
+
+    expect(compiled.querySelector('.mode')?.textContent).toContain('Q学習（プロファイル B）');
+  });
+
+  it('should keep training configuration per profile', () => {
+    const fixture = TestBed.createComponent(AppComponent);
+    const app = fixture.componentInstance as any;
+    fixture.detectChanges();
+
+    app.switchTab('AGENT');
+    fixture.detectChanges();
+
+    app.updateEpisodes(1234);
+    app.setTrainingProfile('B');
+    app.updateEpisodes(5678);
+    app.setTrainingProfile('A');
+
+    expect(app.trainingConfig.episodes).toBe(1234);
+    app.setTrainingProfile('B');
+    expect(app.trainingConfig.episodes).toBe(5678);
+  });
+
 });

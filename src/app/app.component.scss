@@ -274,6 +274,29 @@ h1 {
   font-weight: 700;
 }
 
+
+.profile-comparison {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 0.9rem;
+  font-size: 0.78rem;
+}
+
+.profile-comparison caption {
+  text-align: left;
+  margin-bottom: 0.35rem;
+  color: #94a3b8;
+}
+
+.profile-comparison th,
+.profile-comparison td {
+  border: 1px solid rgba(148, 163, 184, 0.25);
+  padding: 0.4rem;
+}
+
+.profile-comparison th {
+  background: rgba(15, 23, 42, 0.55);
+}
 .training-message {
   margin: 0.8rem 0 0;
   font-size: 0.84rem;

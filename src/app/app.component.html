@@ -54,6 +54,20 @@
       <p class="mode">{{ modeText }}</p>
 
       <div class="overlay-assistant">
+        <label class="overlay-assistant-label" for="play-profile-select">Q学習プロファイル</label>
+        <select
+          id="play-profile-select"
+          class="agent-select"
+          [ngModel]="selectedPlayProfileId"
+          (ngModelChange)="setPlayProfile($event)"
+        >
+          @for (profile of trainingProfiles; track profile.id) {
+            <option [value]="profile.id">{{ profile.label }}</option>
+          }
+        </select>
+      </div>
+
+      <div class="overlay-assistant">
         <label class="overlay-assistant-label" for="overlay-assistant-select">オーバーレイ補助</label>
         <select
           id="overlay-assistant-select"
@@ -99,7 +113,21 @@
   @if (activeTab === 'AGENT') {
     <section class="training-panel" aria-label="q-learning training settings">
       <h2>Q学習エージェント</h2>
-      <p class="hint">ここで学習したテーブルはプレイタブで「Q学習」を選ぶと使われます。</p>
+      <p class="hint">学習対象プロファイルを切り替えて、異なる設定のエージェントを比較できます。</p>
+
+      <label>
+        学習対象プロファイル
+        <select
+          id="training-profile-select"
+          class="agent-select"
+          [ngModel]="selectedTrainingProfileId"
+          (ngModelChange)="setTrainingProfile($event)"
+        >
+          @for (profile of trainingProfiles; track profile.id) {
+            <option [value]="profile.id">{{ profile.label }}</option>
+          }
+        </select>
+      </label>
 
       <div class="training-grid">
         <label for="episodes-input">
@@ -160,6 +188,26 @@
           <dd>{{ trainedStateCount | number }}</dd>
         </div>
       </dl>
+
+      <table class="profile-comparison" aria-label="q-learning profile comparison">
+        <caption>プロファイル比較</caption>
+        <thead>
+          <tr>
+            <th>プロファイル</th>
+            <th>累計エピソード</th>
+            <th>状態数</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (summary of profileSummaries; track summary.label) {
+            <tr>
+              <td>{{ summary.label }}</td>
+              <td>{{ summary.totalEpisodes | number }}</td>
+              <td>{{ summary.stateCount | number }}</td>
+            </tr>
+          }
+        </tbody>
+      </table>
 
       <p class="training-message" [ngClass]="{ busy: isTraining }">{{ trainingMessage }}</p>
       <p class="training-message">{{ persistenceMessage }}</p>
