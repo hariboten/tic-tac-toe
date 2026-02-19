@@ -54,13 +54,17 @@
       <p class="mode">{{ modeText }}</p>
 
       <div class="overlay-assistant">
-        <span class="overlay-assistant-label">オーバーレイ補助</span>
-        <div class="overlay-assistant-buttons">
-          <button type="button" class="agent-toggle" [ngClass]="{ active: overlayAssistant === 'OFF' }" (click)="setOverlayAssistant('OFF')">オフ</button>
-          <button type="button" class="agent-toggle" [ngClass]="{ active: overlayAssistant === 'MONTE_CARLO' }" (click)="setOverlayAssistant('MONTE_CARLO')">モンテカルロ</button>
-          <button type="button" class="agent-toggle" [ngClass]="{ active: overlayAssistant === 'MINIMAX' }" (click)="setOverlayAssistant('MINIMAX')">ミニマックス</button>
-          <button type="button" class="agent-toggle" [ngClass]="{ active: overlayAssistant === 'Q_LEARNING' }" (click)="setOverlayAssistant('Q_LEARNING')">Q学習</button>
-        </div>
+        <label class="overlay-assistant-label" for="overlay-assistant-select">オーバーレイ補助</label>
+        <select
+          id="overlay-assistant-select"
+          class="agent-select"
+          [ngModel]="overlayAssistant"
+          (ngModelChange)="setOverlayAssistant($event)"
+        >
+          @for (assistant of availableOverlayAssistants; track assistant.value) {
+            <option [value]="assistant.value">{{ assistant.label }}</option>
+          }
+        </select>
       </div>
     </section>
 

@@ -112,6 +112,22 @@ describe('AppComponent', () => {
   }));
 
 
+
+  it('should switch overlay assistant to minimax by selecting from dropdown', () => {
+    const fixture = TestBed.createComponent(AppComponent);
+    fixture.detectChanges();
+
+    const compiled = fixture.nativeElement as HTMLElement;
+    const overlaySelect = compiled.querySelector('#overlay-assistant-select') as HTMLSelectElement;
+
+    overlaySelect.value = 'MINIMAX';
+    overlaySelect.dispatchEvent(new Event('change'));
+    fixture.detectChanges();
+
+    expect(compiled.querySelectorAll('.overlay-rate').length).toBeGreaterThan(0);
+    expect(compiled.querySelector('.overlay-status')?.textContent).toContain('ミニマックス');
+  });
+
   it('should keep overlay hidden when overlay assistant is off', () => {
     const fixture = TestBed.createComponent(AppComponent);
     fixture.detectChanges();
