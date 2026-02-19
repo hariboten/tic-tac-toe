@@ -24,25 +24,31 @@
   @if (activeTab === 'PLAY') {
     <section class="agents" aria-label="player agent settings">
       <div class="agent-row">
-        <span class="label">X</span>
-        <div class="agent-buttons">
-          <button type="button" class="agent-toggle" [ngClass]="{ active: agents.X === 'HUMAN' }" (click)="setAgent('X', 'HUMAN')">ヒューマン</button>
-          <button type="button" class="agent-toggle" [ngClass]="{ active: agents.X === 'RANDOM' }" (click)="setAgent('X', 'RANDOM')">ランダム</button>
-          <button type="button" class="agent-toggle" [ngClass]="{ active: agents.X === 'MONTE_CARLO' }" (click)="setAgent('X', 'MONTE_CARLO')">モンテカルロ</button>
-          <button type="button" class="agent-toggle" [ngClass]="{ active: agents.X === 'MINIMAX' }" (click)="setAgent('X', 'MINIMAX')">ミニマックス</button>
-          <button type="button" class="agent-toggle" [ngClass]="{ active: agents.X === 'Q_LEARNING' }" (click)="setAgent('X', 'Q_LEARNING')">Q学習</button>
-        </div>
+        <label class="label" for="agent-x-select">X</label>
+        <select
+          id="agent-x-select"
+          class="agent-select"
+          [ngModel]="agents.X"
+          (ngModelChange)="setAgent('X', $event)"
+        >
+          @for (agent of availableAgents; track agent.value) {
+            <option [value]="agent.value">{{ agent.label }}</option>
+          }
+        </select>
       </div>
 
       <div class="agent-row">
-        <span class="label">O</span>
-        <div class="agent-buttons">
-          <button type="button" class="agent-toggle" [ngClass]="{ active: agents.O === 'HUMAN' }" (click)="setAgent('O', 'HUMAN')">ヒューマン</button>
-          <button type="button" class="agent-toggle" [ngClass]="{ active: agents.O === 'RANDOM' }" (click)="setAgent('O', 'RANDOM')">ランダム</button>
-          <button type="button" class="agent-toggle" [ngClass]="{ active: agents.O === 'MONTE_CARLO' }" (click)="setAgent('O', 'MONTE_CARLO')">モンテカルロ</button>
-          <button type="button" class="agent-toggle" [ngClass]="{ active: agents.O === 'MINIMAX' }" (click)="setAgent('O', 'MINIMAX')">ミニマックス</button>
-          <button type="button" class="agent-toggle" [ngClass]="{ active: agents.O === 'Q_LEARNING' }" (click)="setAgent('O', 'Q_LEARNING')">Q学習</button>
-        </div>
+        <label class="label" for="agent-o-select">O</label>
+        <select
+          id="agent-o-select"
+          class="agent-select"
+          [ngModel]="agents.O"
+          (ngModelChange)="setAgent('O', $event)"
+        >
+          @for (agent of availableAgents; track agent.value) {
+            <option [value]="agent.value">{{ agent.label }}</option>
+          }
+        </select>
       </div>
 
       <p class="mode">{{ modeText }}</p>

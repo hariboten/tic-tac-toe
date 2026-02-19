@@ -16,6 +16,13 @@ import { TicTacToeEngine } from './tic-tac-toe.engine';
   styleUrl: './app.component.scss'
 })
 export class AppComponent implements OnInit, OnDestroy {
+  protected readonly availableAgents: Array<{ value: AgentType; label: string }> = [
+    { value: 'HUMAN', label: 'ヒューマン' },
+    { value: 'RANDOM', label: 'ランダム' },
+    { value: 'MONTE_CARLO', label: 'モンテカルロ' },
+    { value: 'MINIMAX', label: 'ミニマックス' },
+    { value: 'Q_LEARNING', label: 'Q学習' }
+  ];
   protected agents: Record<Player, AgentType> = {
     X: 'HUMAN',
     O: 'HUMAN'
