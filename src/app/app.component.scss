@@ -1,18 +1,18 @@
 :host {
   display: block;
-  height: 100dvh;
+  min-height: 100svh;
+  min-height: 100dvh;
   background: linear-gradient(180deg, #0f172a 0%, #1e293b 100%);
   color: #e2e8f0;
 }
 
 .container {
   max-width: 560px;
-  height: 100%;
+  min-height: 100%;
   margin: 0 auto;
   padding: calc(0.7rem + env(safe-area-inset-top)) calc(0.8rem + env(safe-area-inset-right))
     calc(0.9rem + env(safe-area-inset-bottom)) calc(0.8rem + env(safe-area-inset-left));
   text-align: center;
-  overflow: hidden;
 }
 
 h1 {
@@ -69,16 +69,8 @@ h1 {
 
 .agent-buttons {
   display: grid;
-  grid-auto-flow: column;
-  grid-auto-columns: minmax(88px, 1fr);
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 0.4rem;
-  overflow-x: auto;
-  overscroll-behavior-x: contain;
-  scrollbar-width: none;
-}
-
-.agent-buttons::-webkit-scrollbar {
-  display: none;
 }
 
 .agent-row:last-of-type {
@@ -125,16 +117,8 @@ h1 {
 
 .overlay-assistant-buttons {
   display: grid;
-  grid-auto-flow: column;
-  grid-auto-columns: minmax(90px, 1fr);
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 0.4rem;
-  overflow-x: auto;
-  overscroll-behavior-x: contain;
-  scrollbar-width: none;
-}
-
-.overlay-assistant-buttons::-webkit-scrollbar {
-  display: none;
 }
 
 .status {
@@ -347,9 +331,9 @@ input {
   }
 
   .agent-toggle {
-    font-size: 0.76rem;
-    padding-inline: 0.3rem;
-    min-height: 2.25rem;
+    font-size: 0.72rem;
+    padding-inline: 0.25rem;
+    min-height: 2.2rem;
   }
 
   .board {
