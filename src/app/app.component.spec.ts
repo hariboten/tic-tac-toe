@@ -3,6 +3,7 @@ import { AppComponent } from './app.component';
 
 describe('AppComponent', () => {
   beforeEach(async () => {
+    localStorage.clear();
     await TestBed.configureTestingModule({
       imports: [AppComponent]
     }).compileComponents();
@@ -75,6 +76,37 @@ describe('AppComponent', () => {
     fixture.detectChanges();
 
     expect(compiled.querySelector('.training-message')?.textContent).toContain('エピソードを学習しました');
+  }));
+
+  it('should export and import q-learning data from agent tab', fakeAsync(() => {
+    const fixture = TestBed.createComponent(AppComponent);
+    const app = fixture.componentInstance as any;
+    fixture.detectChanges();
+
+    const compiled = fixture.nativeElement as HTMLElement;
+    const tabs = compiled.querySelectorAll('.tab-button');
+    (tabs[1] as HTMLButtonElement).click();
+    fixture.detectChanges();
+
+    app.trainingConfig.episodes = 20;
+    (compiled.querySelector('.train') as HTMLButtonElement).click();
+    tick(1000);
+    fixture.detectChanges();
+
+    const exportButton = Array.from(compiled.querySelectorAll('.training-actions button')).find((button) => button.textContent?.includes('JSONエクスポート')) as HTMLButtonElement;
+    exportButton.click();
+    fixture.detectChanges();
+
+    const exported = app.portableJson;
+    app.clearTrainingData();
+    app.portableJson = exported;
+
+    const importButton = Array.from(compiled.querySelectorAll('.training-actions button')).find((button) => button.textContent?.includes('JSONインポート')) as HTMLButtonElement;
+    importButton.click();
+    fixture.detectChanges();
+
+    expect(app.trainedStateCount).toBeGreaterThan(0);
+    expect(compiled.textContent).toContain('JSONから学習データを復元しました');
   }));
 
 

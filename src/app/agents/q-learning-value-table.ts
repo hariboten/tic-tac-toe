@@ -13,6 +13,17 @@ export class QLearningValueTable {
     this.qTable.clear();
   }
 
+  replaceAll(entries: Array<[StateKey, QValues]>): void {
+    this.qTable.clear();
+    entries.forEach(([stateKey, qValues]) => {
+      this.qTable.set(stateKey, [...qValues]);
+    });
+  }
+
+  entries(): Array<[StateKey, QValues]> {
+    return Array.from(this.qTable.entries()).map(([stateKey, qValues]) => [stateKey, [...qValues]]);
+  }
+
   hasNonDefaultQValues(stateKey: StateKey, availableCells: number[]): boolean {
     const qValues = this.qTable.get(stateKey);
     if (!qValues) {

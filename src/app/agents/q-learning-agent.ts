@@ -17,6 +17,18 @@ class MathRandomSource implements RandomSource {
   }
 }
 
+type StorageLike = Pick<Storage, 'getItem' | 'setItem' | 'removeItem'>;
+
+type PersistedQLearningDataV1 = {
+  version: 1;
+  totalTrainedEpisodes: number;
+  qTable: Record<string, number[]>;
+};
+
+export type PersistenceResult =
+  | { ok: true; message: string }
+  | { ok: false; message: string };
+
 export class QLearningAgent implements TicTacToeAgent {
   evaluateMoveWinRates(state: GameState, player: Player): Map<number, number> {
     const availableCells = getAvailableCells(state.board);
@@ -31,6 +43,7 @@ export class QLearningAgent implements TicTacToeAgent {
   private readonly reward = new QLearningReward();
   private readonly policy: QLearningPolicy;
   private readonly trainer: QLearningTrainer;
+  private totalEpisodes = 0;
 
   constructor(randomSource: RandomSource = new MathRandomSource()) {
     this.policy = new QLearningPolicy(this.valueTable, this.stateEncoder, randomSource);
@@ -41,8 +54,13 @@ export class QLearningAgent implements TicTacToeAgent {
     return this.valueTable.size;
   }
 
+  get totalTrainedEpisodes(): number {
+    return this.totalEpisodes;
+  }
+
   clear(): void {
     this.valueTable.clear();
+    this.totalEpisodes = 0;
   }
 
   pickMove(state: GameState, player: Player): number {
@@ -65,7 +83,87 @@ export class QLearningAgent implements TicTacToeAgent {
       epsilon = Math.max(validatedConfig.minEpsilon, epsilon * validatedConfig.epsilonDecay);
     }
 
+    this.totalEpisodes += validatedConfig.episodes;
+
     return epsilon;
+  }
+
+  saveToStorage(storageKey: string, storage: StorageLike = localStorage): PersistenceResult {
+    try {
+      storage.setItem(storageKey, JSON.stringify(this.createSnapshot()));
+      return { ok: true, message: '学習データを保存しました。' };
+    } catch {
+      return { ok: false, message: '学習データの保存に失敗しました。ストレージ容量を確認してください。' };
+    }
+  }
+
+  loadFromStorage(storageKey: string, storage: StorageLike = localStorage): PersistenceResult {
+    const raw = storage.getItem(storageKey);
+    if (!raw) {
+      return { ok: false, message: '保存済みの学習データが見つかりません。' };
+    }
+
+    return this.importFromJson(raw);
+  }
+
+  deleteFromStorage(storageKey: string, storage: StorageLike = localStorage): PersistenceResult {
+    storage.removeItem(storageKey);
+    return { ok: true, message: '保存済みの学習データを削除しました。' };
+  }
+
+  exportToJson(): string {
+    return JSON.stringify(this.createSnapshot(), null, 2);
+  }
+
+  importFromJson(json: string): PersistenceResult {
+    try {
+      const parsed: unknown = JSON.parse(json);
+      const snapshot = this.parseSnapshot(parsed);
+      this.valueTable.replaceAll(snapshot.entries);
+      this.totalEpisodes = snapshot.totalTrainedEpisodes;
+      return { ok: true, message: `学習データを読み込みました（状態数: ${snapshot.entries.length.toLocaleString()}）。` };
+    } catch {
+      return { ok: false, message: '学習データの形式が不正です。読み込みを中止しました。' };
+    }
+  }
+
+  private createSnapshot(): PersistedQLearningDataV1 {
+    const qTable = Object.fromEntries(this.valueTable.entries());
+
+    return {
+      version: 1,
+      totalTrainedEpisodes: this.totalEpisodes,
+      qTable
+    };
+  }
+
+  private parseSnapshot(value: unknown): { totalTrainedEpisodes: number; entries: Array<[string, number[]]> } {
+    if (!value || typeof value !== 'object') {
+      throw new Error('invalid snapshot');
+    }
+
+    const snapshot = value as Partial<PersistedQLearningDataV1>;
+    if (snapshot.version !== 1 || typeof snapshot.qTable !== 'object' || snapshot.qTable === null) {
+      throw new Error('invalid version');
+    }
+
+    const totalTrainedEpisodes = snapshot.totalTrainedEpisodes;
+    if (typeof totalTrainedEpisodes !== 'number' || !Number.isInteger(totalTrainedEpisodes) || totalTrainedEpisodes < 0) {
+      throw new Error('invalid episodes');
+    }
+
+    const entries = Object.entries(snapshot.qTable).map(([stateKey, qValues]) => {
+      if (!Array.isArray(qValues) || qValues.length !== 9 || qValues.some((value) => !Number.isFinite(value))) {
+        throw new Error('invalid q values');
+      }
+
+      return [stateKey, [...qValues]] as [string, number[]];
+    });
+
+    return {
+      totalTrainedEpisodes,
+      entries
+    };
   }
 
   private normalizeQValue(value: number): number {
