@@ -33,7 +33,7 @@ export class AppComponent implements OnDestroy {
   };
   protected trainedEpisodes = 0;
   protected trainingMessage = '未学習';
-  protected monteCarloOverlayAssistant: 'OFF' | 'MONTE_CARLO' = 'OFF';
+  protected overlayAssistant: 'OFF' | 'MONTE_CARLO' | 'MINIMAX' | 'Q_LEARNING' = 'OFF';
   protected monteCarloOverlay: Map<number, number> = new Map();
 
   private readonly randomMoveDelayMs = 550;
@@ -65,12 +65,12 @@ export class AppComponent implements OnDestroy {
     return this.agents[this.currentPlayer] !== 'HUMAN';
   }
 
-  protected get showMonteCarloOverlay(): boolean {
-    return this.monteCarloOverlayAssistant === 'MONTE_CARLO' && !this.winner && this.monteCarloOverlay.size > 0;
+  protected get showOverlay(): boolean {
+    return this.overlayAssistant !== 'OFF' && !this.winner && this.monteCarloOverlay.size > 0;
   }
 
-  protected get monteCarloOverlayStatusText(): string {
-    return `モンテカルロの現在局面評価（${this.currentPlayer} 視点）`;
+  protected get overlayStatusText(): string {
+    return `${this.overlayAssistantLabel()}の現在局面評価（${this.currentPlayer} 視点）`;
   }
 
   protected get trainedStateCount(): number {
@@ -114,13 +114,13 @@ export class AppComponent implements OnDestroy {
     this.reset();
   }
 
-  protected setMonteCarloOverlayAssistant(assistant: 'OFF' | 'MONTE_CARLO'): void {
-    if (this.monteCarloOverlayAssistant === assistant) {
+  protected setOverlayAssistant(assistant: 'OFF' | 'MONTE_CARLO' | 'MINIMAX' | 'Q_LEARNING'): void {
+    if (this.overlayAssistant === assistant) {
       return;
     }
 
-    this.monteCarloOverlayAssistant = assistant;
-    this.updateMonteCarloOverlay();
+    this.overlayAssistant = assistant;
+    this.updateOverlay();
   }
 
   protected startTraining(): void {
@@ -195,7 +195,7 @@ export class AppComponent implements OnDestroy {
       return;
     }
 
-    this.updateMonteCarloOverlay();
+    this.updateOverlay();
     this.triggerAgentTurn();
   }
 
@@ -203,7 +203,7 @@ export class AppComponent implements OnDestroy {
     this.clearPendingRandomTurn();
     this.engine.reset();
     this.isAgentThinking = false;
-    this.updateMonteCarloOverlay();
+    this.updateOverlay();
     this.triggerAgentTurn();
   }
 
@@ -245,7 +245,7 @@ export class AppComponent implements OnDestroy {
   private triggerAgentTurn(): void {
     if (!this.winner && this.agents[this.currentPlayer] !== 'HUMAN' && !this.randomMoveTimeoutId) {
       this.isAgentThinking = true;
-      this.updateMonteCarloOverlay();
+      this.updateOverlay();
       this.randomMoveTimeoutId = setTimeout(() => {
         this.randomMoveTimeoutId = null;
 
@@ -261,7 +261,7 @@ export class AppComponent implements OnDestroy {
     }
 
     this.isAgentThinking = false;
-    this.updateMonteCarloOverlay();
+    this.updateOverlay();
   }
 
   protected overlayWinRate(index: number): number | null {
@@ -269,14 +269,24 @@ export class AppComponent implements OnDestroy {
     return rate === undefined ? null : rate * 100;
   }
 
-  private updateMonteCarloOverlay(): void {
-    if (this.winner || this.monteCarloOverlayAssistant === 'OFF') {
+  private updateOverlay(): void {
+    if (this.winner || this.overlayAssistant === 'OFF') {
       this.monteCarloOverlay = new Map();
       return;
     }
 
-    const monteCarloAgent = new MonteCarloAgent(this.monteCarloSimulationCount);
-    this.monteCarloOverlay = monteCarloAgent.evaluateMoveWinRates(this.engine.gameState, this.currentPlayer);
+    if (this.overlayAssistant === 'MONTE_CARLO') {
+      const monteCarloAgent = new MonteCarloAgent(this.monteCarloSimulationCount);
+      this.monteCarloOverlay = monteCarloAgent.evaluateMoveWinRates(this.engine.gameState, this.currentPlayer);
+      return;
+    }
+
+    if (this.overlayAssistant === 'MINIMAX') {
+      this.monteCarloOverlay = this.minimaxAgent.evaluateMoveWinRates(this.engine.gameState, this.currentPlayer);
+      return;
+    }
+
+    this.monteCarloOverlay = this.qLearningAgent.evaluateMoveWinRates(this.engine.gameState, this.currentPlayer);
   }
 
   private clearPendingRandomTurn(): void {
@@ -304,5 +314,21 @@ export class AppComponent implements OnDestroy {
     }
 
     return 'Q学習';
+  }
+
+  private overlayAssistantLabel(): string {
+    if (this.overlayAssistant === 'MONTE_CARLO') {
+      return 'モンテカルロ';
+    }
+
+    if (this.overlayAssistant === 'MINIMAX') {
+      return 'ミニマックス';
+    }
+
+    if (this.overlayAssistant === 'Q_LEARNING') {
+      return 'Q学習';
+    }
+
+    return 'オフ';
   }
 }
