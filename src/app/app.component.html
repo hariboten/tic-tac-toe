@@ -244,6 +244,60 @@
             </select>
           </div>
 
+          <section class="matchup-panel" aria-label="agent matchup table">
+            <h3>エージェント対戦表（勝率）</h3>
+            <p class="matchup-message" [ngClass]="{ busy: isMatchupRunning }">{{ matchupMessage }}</p>
+
+            <div class="compare-controls">
+              <label for="matchup-games-input">1カードあたり対戦数</label>
+              <input
+                id="matchup-games-input"
+                type="number"
+                min="1"
+                step="1"
+                [ngModel]="matchupGamesPerPair"
+                (ngModelChange)="updateMatchupGamesPerPair($event)"
+              />
+              <button type="button" (click)="refreshMatchupTable()" [disabled]="isMatchupRunning">対戦表を更新</button>
+            </div>
+
+            <table class="matchup-table" aria-label="agent win rate matchup table">
+              <thead>
+                <tr>
+                  <th>対戦元 \ 対戦先</th>
+                  @for (column of matchupColumns; track column) {
+                    <th>{{ column }}</th>
+                  }
+                  <th>平均スコア率</th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (row of matchupRows; track row.label) {
+                  <tr>
+                    <th>{{ row.label }}</th>
+                    @for (cell of row.values; track $index) {
+                      <td>
+                        @if (cell === null) {
+                          —
+                        } @else {
+                          <div class="matchup-cell-primary">勝 {{ cell.winRate | number: '1.0-1' }}%</div>
+                          <div class="matchup-cell-secondary">分 {{ cell.drawRate | number: '1.0-1' }}%</div>
+                        }
+                      </td>
+                    }
+                    <td>
+                      @if (row.averageScoreRate === null) {
+                        —
+                      } @else {
+                        {{ row.averageScoreRate | number: '1.0-1' }}%
+                      }
+                    </td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </section>
+
           <table class="profile-comparison" aria-label="q-learning profile comparison">
             <caption>プロファイル比較</caption>
             <thead>

@@ -161,6 +161,73 @@ describe('AppComponent', () => {
     expect(selectedRow?.textContent).toContain('プロファイル B');
   });
 
+  it('should render agent matchup table in compare workspace', fakeAsync(() => {
+    const fixture = TestBed.createComponent(AppComponent);
+    const app = fixture.componentInstance as any;
+    fixture.detectChanges();
+
+    tick(50);
+    app.switchTab('AGENT');
+    app.setAgentWorkspaceTab('COMPARE');
+    fixture.detectChanges();
+
+    const compiled = fixture.nativeElement as HTMLElement;
+    const matchupTable = compiled.querySelector('[aria-label="agent win rate matchup table"]');
+    expect(matchupTable).toBeTruthy();
+    expect(matchupTable?.textContent).toContain('ランダム');
+    expect(matchupTable?.textContent).toContain('ミニマックス');
+  }));
+
+  it('should update matchup table when refresh button is clicked', fakeAsync(() => {
+    const fixture = TestBed.createComponent(AppComponent);
+    const app = fixture.componentInstance as any;
+    fixture.detectChanges();
+
+    tick(50);
+    app.switchTab('AGENT');
+    app.setAgentWorkspaceTab('COMPARE');
+    app.updateMatchupGamesPerPair(4);
+    fixture.detectChanges();
+
+    const compiled = fixture.nativeElement as HTMLElement;
+    const refreshButton = Array.from(compiled.querySelectorAll('.matchup-panel button')).find((button) =>
+      button.textContent?.includes('対戦表を更新')
+    ) as HTMLButtonElement;
+
+    refreshButton.click();
+    fixture.detectChanges();
+    expect(refreshButton.disabled).toBe(true);
+
+    tick(100);
+    fixture.detectChanges();
+
+    expect(refreshButton.disabled).toBe(false);
+    const rateCells = Array.from(compiled.querySelectorAll('.matchup-table td')).filter(
+      (cell) => cell.textContent?.includes('勝') && cell.textContent?.includes('分')
+    );
+    expect(rateCells.length).toBeGreaterThan(0);
+    expect(compiled.querySelector('.matchup-message')?.textContent).toContain('更新完了');
+  }));
+
+  it('should show matchup progress while running', fakeAsync(() => {
+    const fixture = TestBed.createComponent(AppComponent);
+    const app = fixture.componentInstance as any;
+    fixture.detectChanges();
+
+    app.switchTab('AGENT');
+    app.setAgentWorkspaceTab('COMPARE');
+    app.updateMatchupGamesPerPair(60);
+    app.refreshMatchupTable();
+    fixture.detectChanges();
+
+    expect(app.isMatchupRunning).toBe(true);
+    expect(app.matchupMessage).toContain('進捗');
+
+    tick(300);
+    fixture.detectChanges();
+    expect(app.isMatchupRunning).toBe(false);
+  }));
+
   it('should switch overlay assistant to minimax by selecting from dropdown', () => {
     const fixture = TestBed.createComponent(AppComponent);
     fixture.detectChanges();

@@ -12,6 +12,26 @@ type QLearningProfileId = 'A' | 'B' | 'C';
 type OverlayAssistantType = 'OFF' | 'MONTE_CARLO' | 'MINIMAX' | 'Q_LEARNING';
 type AgentWorkspaceTab = 'TRAINING' | 'DATA' | 'COMPARE';
 type ProfileSortKey = 'TOTAL_EPISODES' | 'STATE_COUNT';
+type BattleAgentId = 'RANDOM' | 'MONTE_CARLO' | 'MINIMAX' | `Q_${QLearningProfileId}`;
+
+type BattleAgentEntry = {
+  id: BattleAgentId;
+  label: string;
+  pickMove: (state: { board: Cell[]; currentPlayer: Player; winner: Winner }, player: Player) => number;
+};
+
+type MatchupCellStats = {
+  wins: number;
+  draws: number;
+  losses: number;
+  total: number;
+};
+
+type MatchupCellSummary = {
+  winRate: number;
+  drawRate: number;
+  scoreRate: number;
+};
 
 type QLearningProfile = {
   id: QLearningProfileId;
@@ -50,6 +70,10 @@ export class AppComponent implements OnInit, OnDestroy {
   protected profileSortKey: ProfileSortKey = 'TOTAL_EPISODES';
   protected persistenceMessage = '保存データ未読み込み';
   protected portableJson = '';
+  protected matchupGamesPerPair = 40;
+  protected isMatchupRunning = false;
+  protected matchupMessage = '未実行';
+  protected matchupRows: Array<{ label: string; values: Array<MatchupCellSummary | null>; averageScoreRate: number | null }> = [];
   protected readonly availableOverlayAssistants: Array<{ value: OverlayAssistantType; label: string }> = [
     { value: 'OFF', label: 'オフ' },
     { value: 'MONTE_CARLO', label: 'モンテカルロ' },
@@ -66,12 +90,16 @@ export class AppComponent implements OnInit, OnDestroy {
   private readonly engine = new TicTacToeEngine();
   private readonly randomAgent = new RandomAgent();
   private readonly minimaxAgent = new MinimaxAgent();
+  private readonly matchupMonteCarloAgent = new MonteCarloAgent(200);
   private readonly qLearningProfiles: QLearningProfile[] = [
     this.createProfile('A', 'プロファイル A'),
     this.createProfile('B', 'プロファイル B'),
     this.createProfile('C', 'プロファイル C')
   ];
+  private readonly matchupChunkGames = 24;
   private randomMoveTimeoutId: ReturnType<typeof setTimeout> | null = null;
+  private matchupTimeoutId: ReturnType<typeof setTimeout> | null = null;
+  private matchupRunId = 0;
 
   protected get board(): Cell[] {
     return this.engine.gameState.board;
@@ -157,6 +185,10 @@ export class AppComponent implements OnInit, OnDestroy {
     return this.isTraining ? '実行中' : '待機中';
   }
 
+  protected get matchupColumns(): string[] {
+    return this.battleAgents.map((agent) => agent.label);
+  }
+
   protected get latestAgentMessage(): string {
     if (this.isTraining) {
       return this.trainingMessage;
@@ -201,6 +233,7 @@ export class AppComponent implements OnInit, OnDestroy {
 
   ngOnDestroy(): void {
     this.clearPendingRandomTurn();
+    this.clearPendingMatchupRun();
   }
 
   protected switchTab(tab: 'PLAY' | 'AGENT'): void {
@@ -381,6 +414,100 @@ export class AppComponent implements OnInit, OnDestroy {
     this.selectedTrainingProfile.trainingConfig.minEpsilon = this.clamp(value, 0, 1);
   }
 
+  protected updateMatchupGamesPerPair(value: number): void {
+    this.matchupGamesPerPair = Math.max(1, Math.floor(value || 0));
+  }
+
+  protected refreshMatchupTable(): void {
+    if (this.isMatchupRunning) {
+      return;
+    }
+
+    this.clearPendingMatchupRun();
+    const gamesPerPair = Math.max(1, Math.floor(this.matchupGamesPerPair));
+    const agents = this.battleAgents;
+    const pairs = agents.flatMap((_, rowIndex) =>
+      agents
+        .map((__, colIndex) => ({ rowIndex, colIndex }))
+        .filter(({ rowIndex: r, colIndex: c }) => r !== c)
+    );
+    const totalGames = pairs.length * gamesPerPair;
+    const matrix: Array<Array<MatchupCellStats | null>> = agents.map((_, rowIndex) =>
+      agents.map((__, colIndex) => (rowIndex === colIndex ? null : { wins: 0, draws: 0, losses: 0, total: 0 }))
+    );
+
+    this.matchupGamesPerPair = gamesPerPair;
+    this.isMatchupRunning = true;
+    this.matchupMessage = `対戦表を計算中... 進捗 0.0%（0 / ${totalGames} 局）`;
+
+    let completedGames = 0;
+    let pairIndex = 0;
+    let gameIndexInPair = 0;
+    const runId = this.matchupRunId + 1;
+    this.matchupRunId = runId;
+
+    const runChunk = (): void => {
+      if (this.matchupRunId !== runId) {
+        return;
+      }
+
+      let processedGames = 0;
+      while (pairIndex < pairs.length && processedGames < this.matchupChunkGames) {
+        const pair = pairs[pairIndex];
+        const attacker = agents[pair.rowIndex];
+        const defender = agents[pair.colIndex];
+        const attackerStarts = gameIndexInPair >= Math.floor(gamesPerPair / 2);
+        const result = this.simulateSingleGame(attacker, defender, attackerStarts);
+        const stats = matrix[pair.rowIndex][pair.colIndex];
+
+        if (stats) {
+          stats.total += 1;
+          if (result === 'ATTACKER_WIN') {
+            stats.wins += 1;
+          } else if (result === 'DRAW') {
+            stats.draws += 1;
+          } else {
+            stats.losses += 1;
+          }
+        }
+
+        processedGames += 1;
+        completedGames += 1;
+        gameIndexInPair += 1;
+
+        if (gameIndexInPair >= gamesPerPair) {
+          pairIndex += 1;
+          gameIndexInPair = 0;
+        }
+      }
+
+      const progress = totalGames === 0 ? 100 : (completedGames / totalGames) * 100;
+      this.matchupMessage = `対戦表を計算中... 進捗 ${progress.toFixed(1)}%（${completedGames} / ${totalGames} 局）`;
+
+      if (pairIndex >= pairs.length) {
+        this.matchupRows = agents.map((agent, rowIndex) => {
+          const values = matrix[rowIndex].map((stats) => this.toMatchupCellSummary(stats));
+          const scoreRates = values.filter((value): value is MatchupCellSummary => value !== null).map((value) => value.scoreRate);
+
+          return {
+            label: agent.label,
+            values,
+            averageScoreRate: scoreRates.length > 0 ? scoreRates.reduce((sum, value) => sum + value, 0) / scoreRates.length : null
+          };
+        });
+
+        this.matchupMessage = `${gamesPerPair}局/カードで更新完了（引き分けは0.5点換算で平均スコア率に反映）`;
+        this.isMatchupRunning = false;
+        this.matchupTimeoutId = null;
+        return;
+      }
+
+      this.matchupTimeoutId = setTimeout(runChunk, 0);
+    };
+
+    this.matchupTimeoutId = setTimeout(runChunk, 0);
+  }
+
   protected play(index: number): void {
     const played = this.engine.play(index);
     if (!played) {
@@ -432,6 +559,51 @@ export class AppComponent implements OnInit, OnDestroy {
 
   private clamp(value: number, min: number, max: number): number {
     return Math.min(max, Math.max(min, value));
+  }
+
+  private get battleAgents(): BattleAgentEntry[] {
+    return [
+      {
+        id: 'RANDOM',
+        label: 'ランダム',
+        pickMove: (state, player) => this.randomAgent.pickMove(state, player)
+      },
+      {
+        id: 'MONTE_CARLO',
+        label: 'モンテカルロ',
+        pickMove: (state, player) => this.matchupMonteCarloAgent.pickMove(state, player)
+      },
+      {
+        id: 'MINIMAX',
+        label: 'ミニマックス',
+        pickMove: (state, player) => this.minimaxAgent.pickMove(state, player)
+      },
+      ...this.qLearningProfiles.map((profile) => ({
+        id: `Q_${profile.id}` as const,
+        label: `Q学習 ${profile.id}`,
+        pickMove: (state: { board: Cell[]; currentPlayer: Player; winner: Winner }, player: Player) => profile.agent.pickMove(state, player)
+      }))
+    ];
+  }
+
+  private simulateSingleGame(attacker: BattleAgentEntry, defender: BattleAgentEntry, attackerStarts: boolean): 'ATTACKER_WIN' | 'DEFENDER_WIN' | 'DRAW' {
+    const simulationEngine = new TicTacToeEngine();
+
+    while (!simulationEngine.gameState.winner) {
+      const state = simulationEngine.gameState;
+      const attackerPlayer: Player = attackerStarts ? 'X' : 'O';
+      const currentAgent = state.currentPlayer === attackerPlayer ? attacker : defender;
+      const index = currentAgent.pickMove(state, state.currentPlayer);
+      simulationEngine.play(index);
+    }
+
+    const result = simulationEngine.gameState.winner;
+    if (result === 'DRAW') {
+      return 'DRAW';
+    }
+
+    const attackerPlayer: Player = attackerStarts ? 'X' : 'O';
+    return result === attackerPlayer ? 'ATTACKER_WIN' : 'DEFENDER_WIN';
   }
 
   private triggerAgentTurn(): void {
@@ -486,6 +658,27 @@ export class AppComponent implements OnInit, OnDestroy {
       clearTimeout(this.randomMoveTimeoutId);
       this.randomMoveTimeoutId = null;
     }
+  }
+
+  private clearPendingMatchupRun(): void {
+    this.matchupRunId += 1;
+    if (this.matchupTimeoutId) {
+      clearTimeout(this.matchupTimeoutId);
+      this.matchupTimeoutId = null;
+    }
+    this.isMatchupRunning = false;
+  }
+
+  private toMatchupCellSummary(stats: MatchupCellStats | null): MatchupCellSummary | null {
+    if (!stats || stats.total === 0) {
+      return null;
+    }
+
+    return {
+      winRate: (stats.wins / stats.total) * 100,
+      drawRate: (stats.draws / stats.total) * 100,
+      scoreRate: ((stats.wins + stats.draws * 0.5) / stats.total) * 100
+    };
   }
 
   private agentLabel(agent: AgentType): string {
