@@ -119,9 +119,69 @@
       </div>
 
       <div class="training-actions">
-        <button type="button" class="train" (click)="startTraining()" [disabled]="isTraining">トレーニング開始</button>
+        <button type="button" class="train" (click)="startTraining()" [disabled]="isTraining">単体トレーニング開始</button>
+        <button type="button" class="train batch" (click)="startBatchTraining()" [disabled]="isTraining">複数エージェント学習</button>
         <button type="button" class="clear" (click)="clearTrainingData()" [disabled]="isTraining">学習データをクリア</button>
       </div>
+
+      <section class="batch-training" aria-label="batch q-learning settings">
+        <div class="batch-header">
+          <h3>複数エージェント用パラメーター</h3>
+          <button type="button" class="add-config" (click)="addBatchConfig()" [disabled]="isTraining">設定を追加</button>
+        </div>
+
+        @for (config of batchTrainingConfigs; track $index) {
+          <div class="batch-config">
+            <div class="batch-config-title-row">
+              <p class="batch-config-title">設定 {{ $index + 1 }}</p>
+              <button type="button" class="remove-config" (click)="removeBatchConfig($index)" [disabled]="isTraining || batchTrainingConfigs.length <= 1">削除</button>
+            </div>
+            <div class="training-grid">
+              <label>
+                エピソード数
+                <input type="number" min="1" step="100" [(ngModel)]="config.episodes" (ngModelChange)="updateBatchEpisodes($index, $event)" />
+              </label>
+              <label>
+                学習率 (α)
+                <input type="number" min="0.01" max="1" step="0.01" [(ngModel)]="config.learningRate" (ngModelChange)="updateBatchLearningRate($index, $event)" />
+              </label>
+              <label>
+                割引率 (γ)
+                <input type="number" min="0" max="0.99" step="0.01" [(ngModel)]="config.discountFactor" (ngModelChange)="updateBatchDiscountFactor($index, $event)" />
+              </label>
+              <label>
+                初期ε
+                <input type="number" min="0" max="1" step="0.01" [(ngModel)]="config.epsilon" (ngModelChange)="updateBatchEpsilon($index, $event)" />
+              </label>
+              <label>
+                ε減衰
+                <input type="number" min="0.9" max="1" step="0.0001" [(ngModel)]="config.epsilonDecay" (ngModelChange)="updateBatchEpsilonDecay($index, $event)" />
+              </label>
+              <label>
+                最小ε
+                <input type="number" min="0" max="1" step="0.01" [(ngModel)]="config.minEpsilon" (ngModelChange)="updateBatchMinEpsilon($index, $event)" />
+              </label>
+            </div>
+          </div>
+        }
+      </section>
+
+      <section class="trained-agents" aria-label="trained q-learning agents">
+        <p class="trained-agents-title">プレイで使用するQ学習エージェント</p>
+        <div class="trained-agent-buttons">
+          @for (index of qLearningAgentIndices; track index) {
+            <button
+              type="button"
+              class="agent-toggle"
+              [ngClass]="{ active: activeQLearningAgentIndex === index }"
+              (click)="selectQLearningAgent(index)"
+              [disabled]="isTraining"
+            >
+              エージェント {{ index + 1 }}
+            </button>
+          }
+        </div>
+      </section>
 
       <dl class="training-stats">
         <div>

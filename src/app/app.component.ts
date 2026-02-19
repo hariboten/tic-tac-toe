@@ -33,6 +33,25 @@ export class AppComponent implements OnDestroy {
   };
   protected trainedEpisodes = 0;
   protected trainingMessage = '未学習';
+  protected batchTrainingConfigs: QLearningTrainingConfig[] = [
+    {
+      episodes: 8000,
+      learningRate: 0.2,
+      discountFactor: 0.95,
+      epsilon: 1,
+      epsilonDecay: 0.9995,
+      minEpsilon: 0.05
+    },
+    {
+      episodes: 12000,
+      learningRate: 0.1,
+      discountFactor: 0.9,
+      epsilon: 1,
+      epsilonDecay: 0.9997,
+      minEpsilon: 0.03
+    }
+  ];
+  protected activeQLearningAgentIndex = 0;
   protected overlayAssistant: 'OFF' | 'MONTE_CARLO' | 'MINIMAX' | 'Q_LEARNING' = 'OFF';
   protected monteCarloOverlay: Map<number, number> = new Map();
 
@@ -42,7 +61,7 @@ export class AppComponent implements OnDestroy {
   private readonly engine = new TicTacToeEngine();
   private readonly randomAgent = new RandomAgent();
   private readonly minimaxAgent = new MinimaxAgent();
-  private readonly qLearningAgent = new QLearningAgent();
+  private qLearningAgents: QLearningAgent[] = [new QLearningAgent()];
   private randomMoveTimeoutId: ReturnType<typeof setTimeout> | null = null;
 
   protected get board(): Cell[] {
@@ -74,7 +93,15 @@ export class AppComponent implements OnDestroy {
   }
 
   protected get trainedStateCount(): number {
-    return this.qLearningAgent.tableSize;
+    return this.currentQLearningAgent.tableSize;
+  }
+
+  protected get trainedAgentCount(): number {
+    return this.qLearningAgents.length;
+  }
+
+  protected get qLearningAgentIndices(): number[] {
+    return this.qLearningAgents.map((_, index) => index);
   }
 
   protected get statusText(): string {
@@ -138,7 +165,7 @@ export class AppComponent implements OnDestroy {
 
     const runChunk = (): void => {
       const chunkEpisodes = Math.min(this.trainingChunkSize, remainingEpisodes);
-      epsilon = this.qLearningAgent.train({ ...sanitized, episodes: chunkEpisodes }, epsilon);
+      epsilon = this.currentQLearningAgent.train({ ...sanitized, episodes: chunkEpisodes }, epsilon);
       remainingEpisodes -= chunkEpisodes;
       this.trainedEpisodes += chunkEpisodes;
       this.trainingMessage = `トレーニング中... 残り ${remainingEpisodes.toLocaleString()} エピソード`;
@@ -155,14 +182,96 @@ export class AppComponent implements OnDestroy {
     setTimeout(runChunk, 0);
   }
 
+  protected startBatchTraining(): void {
+    if (this.isTraining) {
+      return;
+    }
+
+    const sanitizedConfigs = this.batchTrainingConfigs.map((config) => this.sanitizeTrainingConfig(config));
+    const agents = sanitizedConfigs.map(() => new QLearningAgent());
+    const epsilons = sanitizedConfigs.map((config) => config.epsilon);
+    const remainingEpisodes = sanitizedConfigs.map((config) => config.episodes);
+    let currentIndex = 0;
+
+    this.isTraining = true;
+    this.trainingMessage = `複数エージェントをトレーニング中... (${agents.length.toLocaleString()} 体)`;
+
+    const runChunk = (): void => {
+      if (currentIndex >= agents.length) {
+        this.qLearningAgents = agents;
+        this.activeQLearningAgentIndex = 0;
+        this.isTraining = false;
+        this.trainingMessage = `${agents.length.toLocaleString()} 体のQ学習エージェントを学習しました`;
+        return;
+      }
+
+      const config = sanitizedConfigs[currentIndex];
+      const chunkEpisodes = Math.min(this.trainingChunkSize, remainingEpisodes[currentIndex]);
+      epsilons[currentIndex] = agents[currentIndex].train({ ...config, episodes: chunkEpisodes }, epsilons[currentIndex]);
+      remainingEpisodes[currentIndex] -= chunkEpisodes;
+      this.trainedEpisodes += chunkEpisodes;
+      this.trainingMessage = `エージェント ${currentIndex + 1}/${agents.length} をトレーニング中... 残り ${remainingEpisodes[currentIndex].toLocaleString()} エピソード`;
+
+      if (remainingEpisodes[currentIndex] <= 0) {
+        currentIndex += 1;
+      }
+
+      setTimeout(runChunk, 0);
+    };
+
+    setTimeout(runChunk, 0);
+  }
+
   protected clearTrainingData(): void {
     if (this.isTraining) {
       return;
     }
 
-    this.qLearningAgent.clear();
+    this.qLearningAgents = [new QLearningAgent()];
+    this.activeQLearningAgentIndex = 0;
     this.trainedEpisodes = 0;
     this.trainingMessage = '学習データを削除しました';
+  }
+
+  protected addBatchConfig(): void {
+    this.batchTrainingConfigs = [...this.batchTrainingConfigs, { ...this.trainingConfig }];
+  }
+
+  protected removeBatchConfig(index: number): void {
+    if (this.batchTrainingConfigs.length <= 1) {
+      return;
+    }
+
+    this.batchTrainingConfigs = this.batchTrainingConfigs.filter((_, configIndex) => configIndex !== index);
+  }
+
+  protected updateBatchEpisodes(index: number, value: number): void {
+    this.updateBatchConfig(index, { episodes: Math.max(1, Math.floor(value || 0)) });
+  }
+
+  protected updateBatchLearningRate(index: number, value: number): void {
+    this.updateBatchConfig(index, { learningRate: this.clamp(value, 0.01, 1) });
+  }
+
+  protected updateBatchDiscountFactor(index: number, value: number): void {
+    this.updateBatchConfig(index, { discountFactor: this.clamp(value, 0, 0.99) });
+  }
+
+  protected updateBatchEpsilon(index: number, value: number): void {
+    this.updateBatchConfig(index, { epsilon: this.clamp(value, 0, 1) });
+  }
+
+  protected updateBatchEpsilonDecay(index: number, value: number): void {
+    this.updateBatchConfig(index, { epsilonDecay: this.clamp(value, 0.9, 1) });
+  }
+
+  protected updateBatchMinEpsilon(index: number, value: number): void {
+    this.updateBatchConfig(index, { minEpsilon: this.clamp(value, 0, 1) });
+  }
+
+  protected selectQLearningAgent(index: number): void {
+    this.activeQLearningAgentIndex = this.clamp(index, 0, this.qLearningAgents.length - 1);
+    this.updateOverlay();
   }
 
   protected updateEpisodes(value: number): void {
@@ -218,10 +327,27 @@ export class AppComponent implements OnDestroy {
     }
 
     if (this.agents[player] === 'Q_LEARNING') {
-      return this.qLearningAgent.pickMove(this.engine.gameState, player);
+      return this.currentQLearningAgent.pickMove(this.engine.gameState, player);
     }
 
     return this.randomAgent.pickMove(this.engine.gameState, player);
+  }
+
+  private get currentQLearningAgent(): QLearningAgent {
+    return this.qLearningAgents[this.activeQLearningAgentIndex] ?? this.qLearningAgents[0];
+  }
+
+  private updateBatchConfig(index: number, patch: Partial<QLearningTrainingConfig>): void {
+    this.batchTrainingConfigs = this.batchTrainingConfigs.map((config, configIndex) => {
+      if (configIndex !== index) {
+        return config;
+      }
+
+      return {
+        ...config,
+        ...patch
+      };
+    });
   }
 
   private sanitizeTrainingConfig(config: QLearningTrainingConfig): QLearningTrainingConfig {
@@ -286,7 +412,7 @@ export class AppComponent implements OnDestroy {
       return;
     }
 
-    this.monteCarloOverlay = this.qLearningAgent.evaluateMoveWinRates(this.engine.gameState, this.currentPlayer);
+    this.monteCarloOverlay = this.currentQLearningAgent.evaluateMoveWinRates(this.engine.gameState, this.currentPlayer);
   }
 
   private clearPendingRandomTurn(): void {

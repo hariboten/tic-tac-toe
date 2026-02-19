@@ -78,6 +78,45 @@ describe('AppComponent', () => {
   }));
 
 
+
+  it('should train multiple q-learning agents with different configs', fakeAsync(() => {
+    const fixture = TestBed.createComponent(AppComponent);
+    const app = fixture.componentInstance as any;
+    fixture.detectChanges();
+
+    const compiled = fixture.nativeElement as HTMLElement;
+    const tabs = compiled.querySelectorAll('.tab-button');
+    (tabs[1] as HTMLButtonElement).click();
+    fixture.detectChanges();
+
+    app.batchTrainingConfigs = [
+      {
+        episodes: 20,
+        learningRate: 0.2,
+        discountFactor: 0.95,
+        epsilon: 1,
+        epsilonDecay: 0.99,
+        minEpsilon: 0.1
+      },
+      {
+        episodes: 20,
+        learningRate: 0.1,
+        discountFactor: 0.9,
+        epsilon: 1,
+        epsilonDecay: 0.99,
+        minEpsilon: 0.1
+      }
+    ];
+
+    const batchTrainButton = compiled.querySelector('.train.batch') as HTMLButtonElement;
+    batchTrainButton.click();
+    tick(1000);
+    fixture.detectChanges();
+
+    expect(compiled.querySelector('.training-message')?.textContent).toContain('2 体のQ学習エージェントを学習しました');
+    expect(compiled.querySelectorAll('.trained-agent-buttons .agent-toggle').length).toBe(2);
+  }));
+
   it('should keep overlay hidden when overlay assistant is off', () => {
     const fixture = TestBed.createComponent(AppComponent);
     fixture.detectChanges();
