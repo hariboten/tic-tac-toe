@@ -10,6 +10,8 @@ import { TicTacToeEngine } from './tic-tac-toe.engine';
 
 type QLearningProfileId = 'A' | 'B' | 'C';
 type OverlayAssistantType = 'OFF' | 'MONTE_CARLO' | 'MINIMAX' | 'Q_LEARNING';
+type AgentWorkspaceTab = 'TRAINING' | 'DATA' | 'COMPARE';
+type ProfileSortKey = 'TOTAL_EPISODES' | 'STATE_COUNT';
 
 type QLearningProfile = {
   id: QLearningProfileId;
@@ -44,6 +46,8 @@ export class AppComponent implements OnInit, OnDestroy {
   protected isTraining = false;
   protected selectedTrainingProfileId: QLearningProfileId = 'A';
   protected selectedPlayProfileId: QLearningProfileId = 'A';
+  protected activeAgentWorkspaceTab: AgentWorkspaceTab = 'TRAINING';
+  protected profileSortKey: ProfileSortKey = 'TOTAL_EPISODES';
   protected persistenceMessage = '保存データ未読み込み';
   protected portableJson = '';
   protected readonly availableOverlayAssistants: Array<{ value: OverlayAssistantType; label: string }> = [
@@ -129,13 +133,40 @@ export class AppComponent implements OnInit, OnDestroy {
     return this.selectedTrainingProfile.agent.totalTrainedEpisodes;
   }
 
-  protected get profileSummaries(): Array<{ label: string; totalEpisodes: number; stateCount: number; message: string }> {
-    return this.qLearningProfiles.map((profile) => ({
+  protected get profileSummaries(): Array<{ id: QLearningProfileId; label: string; totalEpisodes: number; stateCount: number; message: string }> {
+    const summaries = this.qLearningProfiles.map((profile) => ({
       label: profile.label,
+      id: profile.id,
       totalEpisodes: profile.agent.totalTrainedEpisodes,
       stateCount: profile.agent.tableSize,
       message: profile.trainingMessage
     }));
+
+    const sorted = [...summaries].sort((a, b) => {
+      if (this.profileSortKey === 'STATE_COUNT') {
+        return b.stateCount - a.stateCount;
+      }
+
+      return b.totalEpisodes - a.totalEpisodes;
+    });
+
+    return sorted;
+  }
+
+  protected get isTrainingBusy(): string {
+    return this.isTraining ? '実行中' : '待機中';
+  }
+
+  protected get latestAgentMessage(): string {
+    if (this.isTraining) {
+      return this.trainingMessage;
+    }
+
+    return this.persistenceMessage;
+  }
+
+  protected get latestAgentMessageTone(): 'success' | 'warn' | 'error' {
+    return this.messageTone(this.latestAgentMessage);
   }
 
   ngOnInit(): void {
@@ -202,6 +233,14 @@ export class AppComponent implements OnInit, OnDestroy {
     this.selectedTrainingProfileId = profileId;
   }
 
+  protected setAgentWorkspaceTab(tab: AgentWorkspaceTab): void {
+    this.activeAgentWorkspaceTab = tab;
+  }
+
+  protected setProfileSortKey(sortKey: ProfileSortKey): void {
+    this.profileSortKey = sortKey;
+  }
+
   protected setPlayProfile(profileId: QLearningProfileId): void {
     if (this.selectedPlayProfileId === profileId) {
       return;
@@ -251,6 +290,10 @@ export class AppComponent implements OnInit, OnDestroy {
       return;
     }
 
+    if (!this.confirmDangerAction('選択中プロファイルの学習データをクリアします。よろしいですか？')) {
+      return;
+    }
+
     const profile = this.selectedTrainingProfile;
     profile.agent.clear();
     profile.trainedEpisodes = profile.agent.totalTrainedEpisodes;
@@ -281,6 +324,10 @@ export class AppComponent implements OnInit, OnDestroy {
 
   protected deleteTrainingData(): void {
     if (this.isTraining) {
+      return;
+    }
+
+    if (!this.confirmDangerAction('保存済み学習データを削除します。よろしいですか？')) {
       return;
     }
 
@@ -501,5 +548,25 @@ export class AppComponent implements OnInit, OnDestroy {
 
   private storageKey(profileId: QLearningProfileId): string {
     return `${this.qLearningStorageKeyPrefix}.${profileId}`;
+  }
+
+  private confirmDangerAction(message: string): boolean {
+    if (typeof window.confirm !== 'function') {
+      return true;
+    }
+
+    return window.confirm(message);
+  }
+
+  private messageTone(message: string): 'success' | 'warn' | 'error' {
+    if (message.includes('失敗') || message.includes('エラー')) {
+      return 'error';
+    }
+
+    if (message.includes('未') || message.includes('なし')) {
+      return 'warn';
+    }
+
+    return 'success';
   }
 }

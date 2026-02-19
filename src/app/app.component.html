@@ -113,101 +113,158 @@
   @if (activeTab === 'AGENT') {
     <section class="training-panel" aria-label="q-learning training settings">
       <h2>Q学習エージェント</h2>
-      <p class="hint">学習対象プロファイルを切り替えて、異なる設定のエージェントを比較できます。</p>
+      <p class="hint">目的別に整理しました。まずは「学習」タブでトレーニング開始してください。</p>
 
-      <label>
-        学習対象プロファイル
-        <select
-          id="training-profile-select"
-          class="agent-select"
-          [ngModel]="selectedTrainingProfileId"
-          (ngModelChange)="setTrainingProfile($event)"
-        >
-          @for (profile of trainingProfiles; track profile.id) {
-            <option [value]="profile.id">{{ profile.label }}</option>
-          }
-        </select>
-      </label>
-
-      <div class="training-grid">
-        <label for="episodes-input">
-          エピソード数
-          <input id="episodes-input" type="number" min="1" step="100" [(ngModel)]="trainingConfig.episodes" (ngModelChange)="updateEpisodes($event)" />
-        </label>
-        <label for="learning-rate-input">
-          学習率 (α)
-          <input id="learning-rate-input" type="number" min="0.01" max="1" step="0.01" [(ngModel)]="trainingConfig.learningRate" (ngModelChange)="updateLearningRate($event)" />
-        </label>
-        <label for="discount-factor-input">
-          割引率 (γ)
-          <input id="discount-factor-input" type="number" min="0" max="0.99" step="0.01" [(ngModel)]="trainingConfig.discountFactor" (ngModelChange)="updateDiscountFactor($event)" />
-        </label>
-        <label for="epsilon-input">
-          初期ε
-          <input id="epsilon-input" type="number" min="0" max="1" step="0.01" [(ngModel)]="trainingConfig.epsilon" (ngModelChange)="updateEpsilon($event)" />
-        </label>
-        <label for="epsilon-decay-input">
-          ε減衰
-          <input id="epsilon-decay-input" type="number" min="0.9" max="1" step="0.0001" [(ngModel)]="trainingConfig.epsilonDecay" (ngModelChange)="updateEpsilonDecay($event)" />
-        </label>
-        <label for="min-epsilon-input">
-          最小ε
-          <input id="min-epsilon-input" type="number" min="0" max="1" step="0.01" [(ngModel)]="trainingConfig.minEpsilon" (ngModelChange)="updateMinEpsilon($event)" />
-        </label>
-      </div>
-
-      <div class="training-actions">
-        <button type="button" class="train" (click)="startTraining()" [disabled]="isTraining">トレーニング開始</button>
-        <button type="button" class="clear" (click)="clearTrainingData()" [disabled]="isTraining">学習データをクリア</button>
-      </div>
-
-      <div class="training-actions">
-        <button type="button" (click)="saveTrainingData()" [disabled]="isTraining">保存</button>
-        <button type="button" (click)="loadTrainingData()" [disabled]="isTraining">読み込み</button>
-        <button type="button" (click)="deleteTrainingData()" [disabled]="isTraining">保存データ削除</button>
-        <button type="button" (click)="exportTrainingData()">JSONエクスポート</button>
-        <button type="button" (click)="importTrainingData()" [disabled]="isTraining">JSONインポート</button>
-      </div>
-
-      <label>
-        JSON入出力
-        <textarea rows="8" [(ngModel)]="portableJson" placeholder="ここにJSONを貼り付けてインポートできます"></textarea>
-      </label>
-
-      <dl class="training-stats">
+      <section class="agent-summary">
         <div>
-          <dt>学習済みエピソード（現セッション）</dt>
-          <dd>{{ trainedEpisodes | number }}</dd>
+          <span class="summary-label">学習対象</span>
+          <strong>{{ selectedTrainingProfile.label }}</strong>
         </div>
         <div>
-          <dt>学習済みエピソード（累計）</dt>
-          <dd>{{ totalTrainedEpisodes | number }}</dd>
+          <span class="summary-label">学習状態</span>
+          <strong>{{ isTrainingBusy }}</strong>
         </div>
         <div>
-          <dt>状態数</dt>
-          <dd>{{ trainedStateCount | number }}</dd>
+          <span class="summary-label">最新メッセージ</span>
+          <p class="summary-message" [ngClass]="latestAgentMessageTone">{{ latestAgentMessage }}</p>
         </div>
-      </dl>
+      </section>
 
-      <table class="profile-comparison" aria-label="q-learning profile comparison">
-        <caption>プロファイル比較</caption>
-        <thead>
-          <tr>
-            <th>プロファイル</th>
-            <th>累計エピソード</th>
-            <th>状態数</th>
-          </tr>
-        </thead>
-        <tbody>
-          @for (summary of profileSummaries; track summary.label) {
-            <tr>
-              <td>{{ summary.label }}</td>
-              <td>{{ summary.totalEpisodes | number }}</td>
-              <td>{{ summary.stateCount | number }}</td>
-            </tr>
-          }
-        </tbody>
-      </table>
+      <section class="agent-workspace-tabs" aria-label="agent workspace tabs">
+        <button type="button" class="tab-button" [ngClass]="{ active: activeAgentWorkspaceTab === 'TRAINING' }" (click)="setAgentWorkspaceTab('TRAINING')">学習</button>
+        <button type="button" class="tab-button" [ngClass]="{ active: activeAgentWorkspaceTab === 'DATA' }" (click)="setAgentWorkspaceTab('DATA')">データ管理</button>
+        <button type="button" class="tab-button" [ngClass]="{ active: activeAgentWorkspaceTab === 'COMPARE' }" (click)="setAgentWorkspaceTab('COMPARE')">比較</button>
+      </section>
+
+      @if (activeAgentWorkspaceTab === 'TRAINING') {
+        <section class="agent-workspace-panel" aria-label="agent training workspace">
+          <label>
+            学習対象プロファイル
+            <select
+              id="training-profile-select"
+              class="agent-select"
+              [ngModel]="selectedTrainingProfileId"
+              (ngModelChange)="setTrainingProfile($event)"
+            >
+              @for (profile of trainingProfiles; track profile.id) {
+                <option [value]="profile.id">{{ profile.label }}</option>
+              }
+            </select>
+          </label>
+
+          <div class="training-actions training-primary-actions">
+            <button type="button" class="train" (click)="startTraining()" [disabled]="isTraining">トレーニング開始</button>
+            <button type="button" class="clear" (click)="clearTrainingData()" [disabled]="isTraining">学習データをクリア</button>
+          </div>
+
+          <div class="training-grid">
+            <label for="episodes-input">
+              エピソード数
+              <input id="episodes-input" type="number" min="1" step="100" [(ngModel)]="trainingConfig.episodes" (ngModelChange)="updateEpisodes($event)" />
+            </label>
+            <label for="learning-rate-input">
+              学習率 (α)
+              <input id="learning-rate-input" type="number" min="0.01" max="1" step="0.01" [(ngModel)]="trainingConfig.learningRate" (ngModelChange)="updateLearningRate($event)" />
+            </label>
+            <label for="discount-factor-input">
+              割引率 (γ)
+              <input id="discount-factor-input" type="number" min="0" max="0.99" step="0.01" [(ngModel)]="trainingConfig.discountFactor" (ngModelChange)="updateDiscountFactor($event)" />
+            </label>
+            <label for="epsilon-input">
+              初期ε
+              <input id="epsilon-input" type="number" min="0" max="1" step="0.01" [(ngModel)]="trainingConfig.epsilon" (ngModelChange)="updateEpsilon($event)" />
+            </label>
+            <label for="epsilon-decay-input">
+              ε減衰
+              <input id="epsilon-decay-input" type="number" min="0.9" max="1" step="0.0001" [(ngModel)]="trainingConfig.epsilonDecay" (ngModelChange)="updateEpsilonDecay($event)" />
+            </label>
+            <label for="min-epsilon-input">
+              最小ε
+              <input id="min-epsilon-input" type="number" min="0" max="1" step="0.01" [(ngModel)]="trainingConfig.minEpsilon" (ngModelChange)="updateMinEpsilon($event)" />
+            </label>
+          </div>
+
+          <dl class="training-stats">
+            <div>
+              <dt>学習済みエピソード（現セッション）</dt>
+              <dd>{{ trainedEpisodes | number }}</dd>
+            </div>
+            <div>
+              <dt>学習済みエピソード（累計）</dt>
+              <dd>{{ totalTrainedEpisodes | number }}</dd>
+            </div>
+            <div>
+              <dt>状態数</dt>
+              <dd>{{ trainedStateCount | number }}</dd>
+            </div>
+          </dl>
+        </section>
+      }
+
+      @if (activeAgentWorkspaceTab === 'DATA') {
+        <section class="agent-workspace-panel" aria-label="agent data workspace">
+          <label>
+            学習対象プロファイル
+            <select
+              class="agent-select"
+              [ngModel]="selectedTrainingProfileId"
+              (ngModelChange)="setTrainingProfile($event)"
+            >
+              @for (profile of trainingProfiles; track profile.id) {
+                <option [value]="profile.id">{{ profile.label }}</option>
+              }
+            </select>
+          </label>
+
+          <div class="training-actions">
+            <button type="button" (click)="saveTrainingData()" [disabled]="isTraining">保存</button>
+            <button type="button" (click)="loadTrainingData()" [disabled]="isTraining">読み込み</button>
+            <button type="button" class="clear" (click)="deleteTrainingData()" [disabled]="isTraining">保存データ削除</button>
+          </div>
+
+          <div class="training-actions">
+            <button type="button" (click)="exportTrainingData()">JSONエクスポート</button>
+            <button type="button" (click)="importTrainingData()" [disabled]="isTraining">JSONインポート</button>
+          </div>
+
+          <label>
+            JSON入出力
+            <textarea rows="8" [(ngModel)]="portableJson" placeholder="ここにJSONを貼り付けてインポートできます"></textarea>
+          </label>
+        </section>
+      }
+
+      @if (activeAgentWorkspaceTab === 'COMPARE') {
+        <section class="agent-workspace-panel" aria-label="agent compare workspace">
+          <div class="compare-controls">
+            <label for="profile-sort-select">並び替え</label>
+            <select id="profile-sort-select" class="agent-select" [ngModel]="profileSortKey" (ngModelChange)="setProfileSortKey($event)">
+              <option value="TOTAL_EPISODES">累計エピソード順</option>
+              <option value="STATE_COUNT">状態数順</option>
+            </select>
+          </div>
+
+          <table class="profile-comparison" aria-label="q-learning profile comparison">
+            <caption>プロファイル比較</caption>
+            <thead>
+              <tr>
+                <th>プロファイル</th>
+                <th>累計エピソード</th>
+                <th>状態数</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (summary of profileSummaries; track summary.label) {
+                <tr [ngClass]="{ selected: summary.id === selectedTrainingProfileId }">
+                  <td>{{ summary.label }}</td>
+                  <td>{{ summary.totalEpisodes | number }}</td>
+                  <td>{{ summary.stateCount | number }}</td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </section>
+      }
 
       <p class="training-message" [ngClass]="{ busy: isTraining }">{{ trainingMessage }}</p>
       <p class="training-message">{{ persistenceMessage }}</p>
