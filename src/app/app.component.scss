@@ -63,12 +63,6 @@ h1 {
   margin-bottom: 0.5rem;
 }
 
-.agent-buttons {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 0.5rem;
-}
-
 .agent-row:last-of-type {
   margin-bottom: 0.75rem;
 }
@@ -77,19 +71,14 @@ h1 {
   font-weight: 700;
 }
 
-.agent-toggle {
+.agent-select {
+  width: 100%;
   border: 1px solid #475569;
   border-radius: 0.5rem;
   background: #0b1220;
   color: #cbd5e1;
   padding: 0.45rem;
   font-weight: 600;
-  white-space: nowrap;
-}
-
-.agent-toggle.active {
-  border-color: #22c55e;
-  color: #22c55e;
 }
 
 .mode {
@@ -108,12 +97,6 @@ h1 {
   margin-bottom: 0.35rem;
   color: #94a3b8;
   font-size: 0.78rem;
-}
-
-.overlay-assistant-buttons {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 0.5rem;
 }
 
 .status {
@@ -321,14 +304,8 @@ h1 {
     gap: 0.4rem;
   }
 
-  .agent-buttons,
   .training-actions {
     gap: 0.4rem;
-  }
-
-  .agent-toggle {
-    font-size: 0.8rem;
-    padding-inline: 0.3rem;
   }
 }
 

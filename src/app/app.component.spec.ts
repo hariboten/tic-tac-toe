@@ -31,27 +31,29 @@ describe('AppComponent', () => {
     expect(compiled.querySelectorAll('.cell').length).toBe(9);
   });
 
-  it('should switch player agent to monte carlo by clicking toggle button', () => {
+  it('should switch player agent to monte carlo by selecting from dropdown', () => {
     const fixture = TestBed.createComponent(AppComponent);
     fixture.detectChanges();
 
     const compiled = fixture.nativeElement as HTMLElement;
-    const monteCarloButton = compiled.querySelectorAll('.agent-row')[1]?.querySelectorAll('.agent-toggle')[2] as HTMLButtonElement;
+    const agentOSelect = compiled.querySelector('#agent-o-select') as HTMLSelectElement;
 
-    monteCarloButton.click();
+    agentOSelect.value = 'MONTE_CARLO';
+    agentOSelect.dispatchEvent(new Event('change'));
     fixture.detectChanges();
 
     expect(compiled.querySelector('.mode')?.textContent).toContain('O: モンテカルロ');
   });
 
-  it('should switch player agent to minimax by clicking toggle button', () => {
+  it('should switch player agent to minimax by selecting from dropdown', () => {
     const fixture = TestBed.createComponent(AppComponent);
     fixture.detectChanges();
 
     const compiled = fixture.nativeElement as HTMLElement;
-    const minimaxButton = compiled.querySelectorAll('.agent-row')[1]?.querySelectorAll('.agent-toggle')[3] as HTMLButtonElement;
+    const agentOSelect = compiled.querySelector('#agent-o-select') as HTMLSelectElement;
 
-    minimaxButton.click();
+    agentOSelect.value = 'MINIMAX';
+    agentOSelect.dispatchEvent(new Event('change'));
     fixture.detectChanges();
 
     expect(compiled.querySelector('.mode')?.textContent).toContain('O: ミニマックス');
@@ -109,6 +111,22 @@ describe('AppComponent', () => {
     expect(compiled.textContent).toContain('JSONから学習データを復元しました');
   }));
 
+
+
+  it('should switch overlay assistant to minimax by selecting from dropdown', () => {
+    const fixture = TestBed.createComponent(AppComponent);
+    fixture.detectChanges();
+
+    const compiled = fixture.nativeElement as HTMLElement;
+    const overlaySelect = compiled.querySelector('#overlay-assistant-select') as HTMLSelectElement;
+
+    overlaySelect.value = 'MINIMAX';
+    overlaySelect.dispatchEvent(new Event('change'));
+    fixture.detectChanges();
+
+    expect(compiled.querySelectorAll('.overlay-rate').length).toBeGreaterThan(0);
+    expect(compiled.querySelector('.overlay-status')?.textContent).toContain('ミニマックス');
+  });
 
   it('should keep overlay hidden when overlay assistant is off', () => {
     const fixture = TestBed.createComponent(AppComponent);

@@ -16,6 +16,13 @@ import { TicTacToeEngine } from './tic-tac-toe.engine';
   styleUrl: './app.component.scss'
 })
 export class AppComponent implements OnInit, OnDestroy {
+  protected readonly availableAgents: Array<{ value: AgentType; label: string }> = [
+    { value: 'HUMAN', label: 'ヒューマン' },
+    { value: 'RANDOM', label: 'ランダム' },
+    { value: 'MONTE_CARLO', label: 'モンテカルロ' },
+    { value: 'MINIMAX', label: 'ミニマックス' },
+    { value: 'Q_LEARNING', label: 'Q学習' }
+  ];
   protected agents: Record<Player, AgentType> = {
     X: 'HUMAN',
     O: 'HUMAN'
@@ -35,6 +42,12 @@ export class AppComponent implements OnInit, OnDestroy {
   protected trainingMessage = '未学習';
   protected persistenceMessage = '保存データ未読み込み';
   protected portableJson = '';
+  protected readonly availableOverlayAssistants: Array<{ value: 'OFF' | 'MONTE_CARLO' | 'MINIMAX' | 'Q_LEARNING'; label: string }> = [
+    { value: 'OFF', label: 'オフ' },
+    { value: 'MONTE_CARLO', label: 'モンテカルロ' },
+    { value: 'MINIMAX', label: 'ミニマックス' },
+    { value: 'Q_LEARNING', label: 'Q学習' }
+  ];
   protected overlayAssistant: 'OFF' | 'MONTE_CARLO' | 'MINIMAX' | 'Q_LEARNING' = 'OFF';
   protected monteCarloOverlay: Map<number, number> = new Map();
 
