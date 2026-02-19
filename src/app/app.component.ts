@@ -1,4 +1,4 @@
-import { Component, OnDestroy } from '@angular/core';
+import { Component, OnDestroy, OnInit } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { DecimalPipe, NgClass } from '@angular/common';
 import { AgentType, Cell, Player, Winner } from './game.types';
@@ -15,7 +15,7 @@ import { TicTacToeEngine } from './tic-tac-toe.engine';
   templateUrl: './app.component.html',
   styleUrl: './app.component.scss'
 })
-export class AppComponent implements OnDestroy {
+export class AppComponent implements OnInit, OnDestroy {
   protected agents: Record<Player, AgentType> = {
     X: 'HUMAN',
     O: 'HUMAN'
@@ -33,12 +33,15 @@ export class AppComponent implements OnDestroy {
   };
   protected trainedEpisodes = 0;
   protected trainingMessage = '未学習';
+  protected persistenceMessage = '保存データ未読み込み';
+  protected portableJson = '';
   protected overlayAssistant: 'OFF' | 'MONTE_CARLO' | 'MINIMAX' | 'Q_LEARNING' = 'OFF';
   protected monteCarloOverlay: Map<number, number> = new Map();
 
   private readonly randomMoveDelayMs = 550;
   private readonly monteCarloSimulationCount = 700;
   private readonly trainingChunkSize = 500;
+  private readonly qLearningStorageKey = 'tic-tac-toe.q-learning.v1';
   private readonly engine = new TicTacToeEngine();
   private readonly randomAgent = new RandomAgent();
   private readonly minimaxAgent = new MinimaxAgent();
@@ -75,6 +78,17 @@ export class AppComponent implements OnDestroy {
 
   protected get trainedStateCount(): number {
     return this.qLearningAgent.tableSize;
+  }
+
+  protected get totalTrainedEpisodes(): number {
+    return this.qLearningAgent.totalTrainedEpisodes;
+  }
+
+  ngOnInit(): void {
+    const loadResult = this.qLearningAgent.loadFromStorage(this.qLearningStorageKey);
+    this.persistenceMessage = loadResult.ok
+      ? `自動復元に成功しました。${loadResult.message}`
+      : `自動復元をスキップしました。${loadResult.message}`;
   }
 
   protected get statusText(): string {
@@ -146,6 +160,8 @@ export class AppComponent implements OnDestroy {
       if (remainingEpisodes <= 0) {
         this.isTraining = false;
         this.trainingMessage = `${sanitized.episodes.toLocaleString()} エピソードを学習しました`;
+        const saveResult = this.qLearningAgent.saveToStorage(this.qLearningStorageKey);
+        this.persistenceMessage = saveResult.message;
         return;
       }
 
@@ -161,8 +177,56 @@ export class AppComponent implements OnDestroy {
     }
 
     this.qLearningAgent.clear();
-    this.trainedEpisodes = 0;
+    this.trainedEpisodes = this.qLearningAgent.totalTrainedEpisodes;
     this.trainingMessage = '学習データを削除しました';
+  }
+
+  protected saveTrainingData(): void {
+    if (this.isTraining) {
+      return;
+    }
+
+    const result = this.qLearningAgent.saveToStorage(this.qLearningStorageKey);
+    this.persistenceMessage = result.message;
+  }
+
+  protected loadTrainingData(): void {
+    if (this.isTraining) {
+      return;
+    }
+
+    const result = this.qLearningAgent.loadFromStorage(this.qLearningStorageKey);
+    this.trainedEpisodes = this.qLearningAgent.totalTrainedEpisodes;
+    this.trainingMessage = result.ok ? '保存データから学習結果を復元しました' : this.trainingMessage;
+    this.persistenceMessage = result.message;
+  }
+
+  protected deleteTrainingData(): void {
+    if (this.isTraining) {
+      return;
+    }
+
+    const result = this.qLearningAgent.deleteFromStorage(this.qLearningStorageKey);
+    this.persistenceMessage = result.message;
+  }
+
+  protected exportTrainingData(): void {
+    this.portableJson = this.qLearningAgent.exportToJson();
+    this.persistenceMessage = '学習データをJSONに出力しました。';
+  }
+
+  protected importTrainingData(): void {
+    if (this.isTraining) {
+      return;
+    }
+
+    const result = this.qLearningAgent.importFromJson(this.portableJson);
+    this.trainedEpisodes = this.qLearningAgent.totalTrainedEpisodes;
+    if (result.ok) {
+      this.trainingMessage = 'JSONから学習データを復元しました';
+    }
+
+    this.persistenceMessage = result.message;
   }
 
   protected updateEpisodes(value: number): void {

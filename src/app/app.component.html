@@ -123,10 +123,27 @@
         <button type="button" class="clear" (click)="clearTrainingData()" [disabled]="isTraining">学習データをクリア</button>
       </div>
 
+      <div class="training-actions">
+        <button type="button" (click)="saveTrainingData()" [disabled]="isTraining">保存</button>
+        <button type="button" (click)="loadTrainingData()" [disabled]="isTraining">読み込み</button>
+        <button type="button" (click)="deleteTrainingData()" [disabled]="isTraining">保存データ削除</button>
+        <button type="button" (click)="exportTrainingData()">JSONエクスポート</button>
+        <button type="button" (click)="importTrainingData()" [disabled]="isTraining">JSONインポート</button>
+      </div>
+
+      <label>
+        JSON入出力
+        <textarea rows="8" [(ngModel)]="portableJson" placeholder="ここにJSONを貼り付けてインポートできます"></textarea>
+      </label>
+
       <dl class="training-stats">
         <div>
           <dt>学習済みエピソード（現セッション）</dt>
           <dd>{{ trainedEpisodes | number }}</dd>
+        </div>
+        <div>
+          <dt>学習済みエピソード（累計）</dt>
+          <dd>{{ totalTrainedEpisodes | number }}</dd>
         </div>
         <div>
           <dt>状態数</dt>
@@ -135,6 +152,7 @@
       </dl>
 
       <p class="training-message" [ngClass]="{ busy: isTraining }">{{ trainingMessage }}</p>
+      <p class="training-message">{{ persistenceMessage }}</p>
     </section>
   }
 </main>

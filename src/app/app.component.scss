@@ -183,13 +183,14 @@ h1 {
 
 .reset,
 .train,
-.clear {
+.clear,
+.training-actions button {
   width: 100%;
   border: none;
   border-radius: 0.75rem;
-  padding: 0.75rem 1rem;
+  padding: 0.65rem 0.8rem;
   font-weight: 700;
-  font-size: 1rem;
+  font-size: 0.9rem;
 }
 
 .reset,
@@ -240,6 +241,23 @@ h1 {
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 0.6rem;
   margin-top: 0.9rem;
+}
+
+.training-panel > label {
+  margin-top: 0.9rem;
+  display: grid;
+  gap: 0.4rem;
+  font-size: 0.8rem;
+  color: #cbd5e1;
+}
+
+.training-panel textarea {
+  width: 100%;
+  border: 1px solid #475569;
+  border-radius: 0.45rem;
+  background: #0b1220;
+  color: #e2e8f0;
+  padding: 0.55rem;
 }
 
 .clear {

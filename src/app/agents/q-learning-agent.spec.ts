@@ -87,4 +87,73 @@ describe('QLearningAgent', () => {
     expect(agent.tableSize).toBe(0);
     randomSpy.mockRestore();
   });
+
+  it('should export and import trained data as json', () => {
+    const randomSpy = jest.spyOn(Math, 'random').mockReturnValue(0.5);
+    const trainedAgent = new QLearningAgent();
+    trainedAgent.train({
+      episodes: 30,
+      learningRate: 0.2,
+      discountFactor: 0.95,
+      epsilon: 1,
+      epsilonDecay: 0.99,
+      minEpsilon: 0.1
+    });
+
+    const exported = trainedAgent.exportToJson();
+    const restoredAgent = new QLearningAgent();
+    const result = restoredAgent.importFromJson(exported);
+
+    expect(result.ok).toBe(true);
+    expect(restoredAgent.tableSize).toBe(trainedAgent.tableSize);
+    expect(restoredAgent.totalTrainedEpisodes).toBe(trainedAgent.totalTrainedEpisodes);
+
+    randomSpy.mockRestore();
+  });
+
+  it('should reject invalid json import', () => {
+    const agent = new QLearningAgent();
+
+    const result = agent.importFromJson('{"version":999}');
+
+    expect(result.ok).toBe(false);
+    expect(agent.tableSize).toBe(0);
+  });
+
+  it('should save and load with storage', () => {
+    const randomSpy = jest.spyOn(Math, 'random').mockReturnValue(0.5);
+    const storage = new Map<string, string>();
+    const storageLike = {
+      getItem: (key: string): string | null => storage.get(key) ?? null,
+      setItem: (key: string, value: string): void => {
+        storage.set(key, value);
+      },
+      removeItem: (key: string): void => {
+        storage.delete(key);
+      }
+    };
+    const key = 'q-learning';
+
+    const trainedAgent = new QLearningAgent();
+    trainedAgent.train({
+      episodes: 20,
+      learningRate: 0.2,
+      discountFactor: 0.95,
+      epsilon: 1,
+      epsilonDecay: 0.99,
+      minEpsilon: 0.1
+    });
+
+    expect(trainedAgent.saveToStorage(key, storageLike).ok).toBe(true);
+
+    const restoredAgent = new QLearningAgent();
+    const loadResult = restoredAgent.loadFromStorage(key, storageLike);
+    expect(loadResult.ok).toBe(true);
+    expect(restoredAgent.tableSize).toBe(trainedAgent.tableSize);
+
+    expect(restoredAgent.deleteFromStorage(key, storageLike).ok).toBe(true);
+    expect(storage.has(key)).toBe(false);
+
+    randomSpy.mockRestore();
+  });
 });
