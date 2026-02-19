@@ -91,7 +91,7 @@ describe('AppComponent', () => {
     const fixture = TestBed.createComponent(AppComponent);
     const app = fixture.componentInstance as any;
 
-    app.setMonteCarloOverlayAssistant('MONTE_CARLO');
+    app.setOverlayAssistant('MONTE_CARLO');
     fixture.detectChanges();
 
     const compiled = fixture.nativeElement as HTMLElement;
@@ -101,12 +101,12 @@ describe('AppComponent', () => {
     randomSpy.mockRestore();
   });
 
-  it('should keep monte carlo overlay visible after switching turn', () => {
+  it('should keep overlay visible after switching turn', () => {
     const randomSpy = jest.spyOn(Math, 'random').mockReturnValue(0);
     const fixture = TestBed.createComponent(AppComponent);
     const app = fixture.componentInstance as any;
 
-    app.setMonteCarloOverlayAssistant('MONTE_CARLO');
+    app.setOverlayAssistant('MONTE_CARLO');
     app.play(0);
     fixture.detectChanges();
 
@@ -116,6 +116,31 @@ describe('AppComponent', () => {
     expect(compiled.querySelector('.overlay-status')?.textContent).toContain('O 視点');
 
     randomSpy.mockRestore();
+  });
+
+
+  it('should show minimax overlay when overlay assistant is minimax', () => {
+    const fixture = TestBed.createComponent(AppComponent);
+    const app = fixture.componentInstance as any;
+
+    app.setOverlayAssistant('MINIMAX');
+    fixture.detectChanges();
+
+    const compiled = fixture.nativeElement as HTMLElement;
+    expect(compiled.querySelectorAll('.overlay-rate').length).toBeGreaterThan(0);
+    expect(compiled.querySelector('.overlay-status')?.textContent).toContain('ミニマックス');
+  });
+
+  it('should show q-learning overlay when overlay assistant is q-learning', () => {
+    const fixture = TestBed.createComponent(AppComponent);
+    const app = fixture.componentInstance as any;
+
+    app.setOverlayAssistant('Q_LEARNING');
+    fixture.detectChanges();
+
+    const compiled = fixture.nativeElement as HTMLElement;
+    expect(compiled.querySelectorAll('.overlay-rate').length).toBeGreaterThan(0);
+    expect(compiled.querySelector('.overlay-status')?.textContent).toContain('Q学習');
   });
 
   it('should auto play when random agent turn starts after a short delay', fakeAsync(() => {

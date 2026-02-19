@@ -15,6 +15,21 @@ const scoreByWinner = (winner: Winner, player: Player): number => {
 };
 
 export class MinimaxAgent implements TicTacToeAgent {
+  evaluateMoveWinRates(state: GameState, player: Player): Map<number, number> {
+    const availableCells = getAvailableCells(state.board);
+    const winRateByCell = new Map<number, number>();
+
+    for (const cellIndex of availableCells) {
+      const nextBoard = [...state.board];
+      nextBoard[cellIndex] = player;
+
+      const score = this.minimax(nextBoard, nextPlayer(player), player);
+      winRateByCell.set(cellIndex, (score + 1) / 2);
+    }
+
+    return winRateByCell;
+  }
+
   pickMove(state: GameState, player: Player): number {
     const availableCells = getAvailableCells(state.board);
     const bestMoves: number[] = [];

@@ -18,6 +18,14 @@ class MathRandomSource implements RandomSource {
 }
 
 export class QLearningAgent implements TicTacToeAgent {
+  evaluateMoveWinRates(state: GameState, player: Player): Map<number, number> {
+    const availableCells = getAvailableCells(state.board);
+    const stateKey = this.stateEncoder.encode(state.board, player);
+    const qValues = this.valueTable.getQValues(stateKey);
+
+    return new Map(availableCells.map((index) => [index, this.normalizeQValue(qValues[index])]));
+  }
+
   private readonly valueTable = new QLearningValueTable();
   private readonly stateEncoder = new QLearningStateEncoder();
   private readonly reward = new QLearningReward();
@@ -58,6 +66,14 @@ export class QLearningAgent implements TicTacToeAgent {
     }
 
     return epsilon;
+  }
+
+  private normalizeQValue(value: number): number {
+    return this.clamp((value + 1) / 2, 0, 1);
+  }
+
+  private clamp(value: number, min: number, max: number): number {
+    return Math.min(max, Math.max(min, value));
   }
 
   private normalizeConfig(config: QLearningTrainingConfig): ValidatedTrainingConfig {

@@ -50,8 +50,10 @@
       <div class="overlay-assistant">
         <span class="overlay-assistant-label">オーバーレイ補助</span>
         <div class="overlay-assistant-buttons">
-          <button type="button" class="agent-toggle" [ngClass]="{ active: monteCarloOverlayAssistant === 'OFF' }" (click)="setMonteCarloOverlayAssistant('OFF')">オフ</button>
-          <button type="button" class="agent-toggle" [ngClass]="{ active: monteCarloOverlayAssistant === 'MONTE_CARLO' }" (click)="setMonteCarloOverlayAssistant('MONTE_CARLO')">モンテカルロ</button>
+          <button type="button" class="agent-toggle" [ngClass]="{ active: overlayAssistant === 'OFF' }" (click)="setOverlayAssistant('OFF')">オフ</button>
+          <button type="button" class="agent-toggle" [ngClass]="{ active: overlayAssistant === 'MONTE_CARLO' }" (click)="setOverlayAssistant('MONTE_CARLO')">モンテカルロ</button>
+          <button type="button" class="agent-toggle" [ngClass]="{ active: overlayAssistant === 'MINIMAX' }" (click)="setOverlayAssistant('MINIMAX')">ミニマックス</button>
+          <button type="button" class="agent-toggle" [ngClass]="{ active: overlayAssistant === 'Q_LEARNING' }" (click)="setOverlayAssistant('Q_LEARNING')">Q学習</button>
         </div>
       </div>
     </section>
@@ -60,8 +62,8 @@
       {{ statusText }}
     </section>
 
-    @if (showMonteCarloOverlay) {
-      <p class="overlay-status">{{ monteCarloOverlayStatusText }}</p>
+    @if (showOverlay) {
+      <p class="overlay-status">{{ overlayStatusText }}</p>
     }
 
     <section class="board" aria-label="tic tac toe board">
@@ -74,7 +76,7 @@
           [attr.aria-label]="'マス ' + ($index + 1)"
         >
           {{ cell }}
-          @if (showMonteCarloOverlay && overlayWinRate($index) !== null && cell === null) {
+          @if (showOverlay && overlayWinRate($index) !== null && cell === null) {
             <span class="overlay-rate">{{ overlayWinRate($index) | number: '1.0-0' }}%</span>
           }
         </button>
