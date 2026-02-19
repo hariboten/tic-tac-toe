@@ -268,27 +268,28 @@
                   @for (column of matchupColumns; track column) {
                     <th>{{ column }}</th>
                   }
-                  <th>平均勝率</th>
+                  <th>平均スコア率</th>
                 </tr>
               </thead>
               <tbody>
                 @for (row of matchupRows; track row.label) {
                   <tr>
                     <th>{{ row.label }}</th>
-                    @for (rate of row.values; track $index) {
+                    @for (cell of row.values; track $index) {
                       <td>
-                        @if (rate === null) {
+                        @if (cell === null) {
                           —
                         } @else {
-                          {{ rate | number: '1.0-1' }}%
+                          <div class="matchup-cell-primary">勝 {{ cell.winRate | number: '1.0-1' }}%</div>
+                          <div class="matchup-cell-secondary">分 {{ cell.drawRate | number: '1.0-1' }}%</div>
                         }
                       </td>
                     }
                     <td>
-                      @if (row.averageWinRate === null) {
+                      @if (row.averageScoreRate === null) {
                         —
                       } @else {
-                        {{ row.averageWinRate | number: '1.0-1' }}%
+                        {{ row.averageScoreRate | number: '1.0-1' }}%
                       }
                     </td>
                   </tr>

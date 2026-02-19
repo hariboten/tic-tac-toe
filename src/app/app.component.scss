@@ -383,6 +383,16 @@ h1 {
   background: rgba(15, 23, 42, 0.55);
 }
 
+.matchup-cell-primary {
+  font-weight: 700;
+}
+
+.matchup-cell-secondary {
+  margin-top: 0.1rem;
+  font-size: 0.68rem;
+  color: #94a3b8;
+}
+
 .profile-comparison {
   width: 100%;
   border-collapse: collapse;

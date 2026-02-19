@@ -20,6 +20,19 @@ type BattleAgentEntry = {
   pickMove: (state: { board: Cell[]; currentPlayer: Player; winner: Winner }, player: Player) => number;
 };
 
+type MatchupCellStats = {
+  wins: number;
+  draws: number;
+  losses: number;
+  total: number;
+};
+
+type MatchupCellSummary = {
+  winRate: number;
+  drawRate: number;
+  scoreRate: number;
+};
+
 type QLearningProfile = {
   id: QLearningProfileId;
   label: string;
@@ -60,7 +73,7 @@ export class AppComponent implements OnInit, OnDestroy {
   protected matchupGamesPerPair = 40;
   protected isMatchupRunning = false;
   protected matchupMessage = '未実行';
-  protected matchupRows: Array<{ label: string; values: Array<number | null>; averageWinRate: number | null }> = [];
+  protected matchupRows: Array<{ label: string; values: Array<MatchupCellSummary | null>; averageScoreRate: number | null }> = [];
   protected readonly availableOverlayAssistants: Array<{ value: OverlayAssistantType; label: string }> = [
     { value: 'OFF', label: 'オフ' },
     { value: 'MONTE_CARLO', label: 'モンテカルロ' },
@@ -83,7 +96,10 @@ export class AppComponent implements OnInit, OnDestroy {
     this.createProfile('B', 'プロファイル B'),
     this.createProfile('C', 'プロファイル C')
   ];
+  private readonly matchupChunkGames = 24;
   private randomMoveTimeoutId: ReturnType<typeof setTimeout> | null = null;
+  private matchupTimeoutId: ReturnType<typeof setTimeout> | null = null;
+  private matchupRunId = 0;
 
   protected get board(): Cell[] {
     return this.engine.gameState.board;
@@ -217,6 +233,7 @@ export class AppComponent implements OnInit, OnDestroy {
 
   ngOnDestroy(): void {
     this.clearPendingRandomTurn();
+    this.clearPendingMatchupRun();
   }
 
   protected switchTab(tab: 'PLAY' | 'AGENT'): void {
@@ -406,33 +423,89 @@ export class AppComponent implements OnInit, OnDestroy {
       return;
     }
 
+    this.clearPendingMatchupRun();
     const gamesPerPair = Math.max(1, Math.floor(this.matchupGamesPerPair));
+    const agents = this.battleAgents;
+    const pairs = agents.flatMap((_, rowIndex) =>
+      agents
+        .map((__, colIndex) => ({ rowIndex, colIndex }))
+        .filter(({ rowIndex: r, colIndex: c }) => r !== c)
+    );
+    const totalGames = pairs.length * gamesPerPair;
+    const matrix: Array<Array<MatchupCellStats | null>> = agents.map((_, rowIndex) =>
+      agents.map((__, colIndex) => (rowIndex === colIndex ? null : { wins: 0, draws: 0, losses: 0, total: 0 }))
+    );
+
     this.matchupGamesPerPair = gamesPerPair;
     this.isMatchupRunning = true;
-    this.matchupMessage = '対戦表を計算中...';
+    this.matchupMessage = `対戦表を計算中... 進捗 0.0%（0 / ${totalGames} 局）`;
 
-    setTimeout(() => {
-      this.matchupRows = this.battleAgents.map((attacker, rowIndex) => {
-        const values = this.battleAgents.map((defender, colIndex) => {
-          if (rowIndex === colIndex) {
-            return null;
+    let completedGames = 0;
+    let pairIndex = 0;
+    let gameIndexInPair = 0;
+    const runId = this.matchupRunId + 1;
+    this.matchupRunId = runId;
+
+    const runChunk = (): void => {
+      if (this.matchupRunId !== runId) {
+        return;
+      }
+
+      let processedGames = 0;
+      while (pairIndex < pairs.length && processedGames < this.matchupChunkGames) {
+        const pair = pairs[pairIndex];
+        const attacker = agents[pair.rowIndex];
+        const defender = agents[pair.colIndex];
+        const attackerStarts = gameIndexInPair >= Math.floor(gamesPerPair / 2);
+        const result = this.simulateSingleGame(attacker, defender, attackerStarts);
+        const stats = matrix[pair.rowIndex][pair.colIndex];
+
+        if (stats) {
+          stats.total += 1;
+          if (result === 'ATTACKER_WIN') {
+            stats.wins += 1;
+          } else if (result === 'DRAW') {
+            stats.draws += 1;
+          } else {
+            stats.losses += 1;
           }
+        }
 
-          return this.computeMatchupWinRate(attacker, defender, gamesPerPair);
+        processedGames += 1;
+        completedGames += 1;
+        gameIndexInPair += 1;
+
+        if (gameIndexInPair >= gamesPerPair) {
+          pairIndex += 1;
+          gameIndexInPair = 0;
+        }
+      }
+
+      const progress = totalGames === 0 ? 100 : (completedGames / totalGames) * 100;
+      this.matchupMessage = `対戦表を計算中... 進捗 ${progress.toFixed(1)}%（${completedGames} / ${totalGames} 局）`;
+
+      if (pairIndex >= pairs.length) {
+        this.matchupRows = agents.map((agent, rowIndex) => {
+          const values = matrix[rowIndex].map((stats) => this.toMatchupCellSummary(stats));
+          const scoreRates = values.filter((value): value is MatchupCellSummary => value !== null).map((value) => value.scoreRate);
+
+          return {
+            label: agent.label,
+            values,
+            averageScoreRate: scoreRates.length > 0 ? scoreRates.reduce((sum, value) => sum + value, 0) / scoreRates.length : null
+          };
         });
 
-        const winRates = values.filter((value): value is number => value !== null);
+        this.matchupMessage = `${gamesPerPair}局/カードで更新完了（引き分けは0.5点換算で平均スコア率に反映）`;
+        this.isMatchupRunning = false;
+        this.matchupTimeoutId = null;
+        return;
+      }
 
-        return {
-          label: attacker.label,
-          values,
-          averageWinRate: winRates.length > 0 ? winRates.reduce((sum, rate) => sum + rate, 0) / winRates.length : null
-        };
-      });
+      this.matchupTimeoutId = setTimeout(runChunk, 0);
+    };
 
-      this.matchupMessage = `${gamesPerPair}局/カードで勝率を更新しました`;
-      this.isMatchupRunning = false;
-    }, 0);
+    this.matchupTimeoutId = setTimeout(runChunk, 0);
   }
 
   protected play(index: number): void {
@@ -513,21 +586,6 @@ export class AppComponent implements OnInit, OnDestroy {
     ];
   }
 
-  private computeMatchupWinRate(attacker: BattleAgentEntry, defender: BattleAgentEntry, gamesPerPair: number): number {
-    const defenderFirstGames = Math.floor(gamesPerPair / 2);
-    let attackerWins = 0;
-
-    for (let i = 0; i < gamesPerPair; i += 1) {
-      const attackerStarts = i >= defenderFirstGames;
-      const result = this.simulateSingleGame(attacker, defender, attackerStarts);
-      if (result === 'ATTACKER_WIN') {
-        attackerWins += 1;
-      }
-    }
-
-    return gamesPerPair === 0 ? 0 : (attackerWins / gamesPerPair) * 100;
-  }
-
   private simulateSingleGame(attacker: BattleAgentEntry, defender: BattleAgentEntry, attackerStarts: boolean): 'ATTACKER_WIN' | 'DEFENDER_WIN' | 'DRAW' {
     const simulationEngine = new TicTacToeEngine();
 
@@ -600,6 +658,27 @@ export class AppComponent implements OnInit, OnDestroy {
       clearTimeout(this.randomMoveTimeoutId);
       this.randomMoveTimeoutId = null;
     }
+  }
+
+  private clearPendingMatchupRun(): void {
+    this.matchupRunId += 1;
+    if (this.matchupTimeoutId) {
+      clearTimeout(this.matchupTimeoutId);
+      this.matchupTimeoutId = null;
+    }
+    this.isMatchupRunning = false;
+  }
+
+  private toMatchupCellSummary(stats: MatchupCellStats | null): MatchupCellSummary | null {
+    if (!stats || stats.total === 0) {
+      return null;
+    }
+
+    return {
+      winRate: (stats.wins / stats.total) * 100,
+      drawRate: (stats.draws / stats.total) * 100,
+      scoreRate: ((stats.wins + stats.draws * 0.5) / stats.total) * 100
+    };
   }
 
   private agentLabel(agent: AgentType): string {
