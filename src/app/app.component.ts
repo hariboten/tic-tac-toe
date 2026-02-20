@@ -9,11 +9,11 @@ import { RandomAgent } from './agents/random-agent';
 import { TicTacToeEngine } from './tic-tac-toe.engine';
 import { APP_VERSION } from './version';
 
-type QLearningProfileId = 'A' | 'B' | 'C';
+type QLearningProfileId = string;
 type OverlayAssistantType = 'OFF' | 'MONTE_CARLO' | 'MINIMAX' | 'Q_LEARNING';
 type AgentWorkspaceTab = 'TRAINING' | 'DATA' | 'COMPARE';
 type ProfileSortKey = 'TOTAL_EPISODES' | 'STATE_COUNT';
-type BattleAgentId = 'RANDOM' | 'MONTE_CARLO' | 'MINIMAX' | `Q_${QLearningProfileId}`;
+type BattleAgentId = 'RANDOM' | 'MONTE_CARLO' | 'MINIMAX' | `Q_${string}`;
 
 type BattleAgentEntry = {
   id: BattleAgentId;
@@ -71,6 +71,7 @@ export class AppComponent implements OnInit, OnDestroy {
   protected profileSortKey: ProfileSortKey = 'TOTAL_EPISODES';
   protected persistenceMessage = '保存データ未読み込み';
   protected portableJson = '';
+  protected newProfileLabel = '';
   protected matchupGamesPerPair = 40;
   protected isMatchupRunning = false;
   protected matchupMessage = '未実行';
@@ -133,6 +134,10 @@ export class AppComponent implements OnInit, OnDestroy {
 
   protected get trainingProfiles(): Array<{ id: QLearningProfileId; label: string }> {
     return this.qLearningProfiles.map(({ id, label }) => ({ id, label }));
+  }
+
+  protected get profileCount(): number {
+    return this.qLearningProfiles.length;
   }
 
   protected get selectedTrainingProfile(): QLearningProfile {
@@ -265,6 +270,10 @@ export class AppComponent implements OnInit, OnDestroy {
   }
 
   protected setTrainingProfile(profileId: QLearningProfileId): void {
+    if (!this.hasProfile(profileId)) {
+      return;
+    }
+
     this.selectedTrainingProfileId = profileId;
   }
 
@@ -277,11 +286,51 @@ export class AppComponent implements OnInit, OnDestroy {
   }
 
   protected setPlayProfile(profileId: QLearningProfileId): void {
-    if (this.selectedPlayProfileId === profileId) {
+    if (this.selectedPlayProfileId === profileId || !this.hasProfile(profileId)) {
       return;
     }
 
     this.selectedPlayProfileId = profileId;
+    this.updateOverlay();
+  }
+
+  protected createProfileFromInput(): void {
+    const sanitizedLabel = this.newProfileLabel.trim();
+    const profileId = this.generateProfileId();
+    const profileLabel = sanitizedLabel.length > 0 ? sanitizedLabel : `プロファイル ${profileId}`;
+    const profile = this.createProfile(profileId, profileLabel);
+
+    this.qLearningProfiles.push(profile);
+    this.selectedTrainingProfileId = profileId;
+    this.selectedPlayProfileId = profileId;
+    this.newProfileLabel = '';
+    this.persistenceMessage = `${profile.label} を追加しました`;
+    this.updateOverlay();
+  }
+
+  protected removeSelectedTrainingProfile(): void {
+    if (this.isTraining || this.qLearningProfiles.length <= 1) {
+      return;
+    }
+
+    const profile = this.selectedTrainingProfile;
+    if (!this.confirmDangerAction(`${profile.label} を削除します。よろしいですか？`)) {
+      return;
+    }
+
+    const removedIndex = this.qLearningProfiles.findIndex((entry) => entry.id === profile.id);
+    if (removedIndex < 0) {
+      return;
+    }
+
+    this.qLearningProfiles.splice(removedIndex, 1);
+    const fallback = this.qLearningProfiles[Math.max(0, removedIndex - 1)] ?? this.qLearningProfiles[0];
+    this.selectedTrainingProfileId = fallback.id;
+    if (this.selectedPlayProfileId === profile.id) {
+      this.selectedPlayProfileId = fallback.id;
+    }
+
+    this.persistenceMessage = `${profile.label} を削除しました`;
     this.updateOverlay();
   }
 
@@ -582,7 +631,7 @@ export class AppComponent implements OnInit, OnDestroy {
       },
       ...this.qLearningProfiles.map((profile) => ({
         id: `Q_${profile.id}` as const,
-        label: `Q学習 ${profile.id}`,
+        label: `Q学習 ${profile.label}`,
         pickMove: (state: { board: Cell[]; currentPlayer: Player; winner: Winner }, player: Player) => profile.agent.pickMove(state, player)
       }))
     ];
@@ -739,6 +788,19 @@ export class AppComponent implements OnInit, OnDestroy {
 
   private profileById(profileId: QLearningProfileId): QLearningProfile {
     return this.qLearningProfiles.find((profile) => profile.id === profileId) ?? this.qLearningProfiles[0];
+  }
+
+  private hasProfile(profileId: QLearningProfileId): boolean {
+    return this.qLearningProfiles.some((profile) => profile.id === profileId);
+  }
+
+  private generateProfileId(): QLearningProfileId {
+    let index = 1;
+    while (this.hasProfile(`P${index}`)) {
+      index += 1;
+    }
+
+    return `P${index}`;
   }
 
   private storageKey(profileId: QLearningProfileId): string {

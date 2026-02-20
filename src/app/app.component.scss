@@ -242,6 +242,24 @@ h1 {
   gap: 0.8rem;
 }
 
+.profile-manager {
+  display: grid;
+  gap: 0.6rem;
+  padding: 0.6rem;
+  border: 1px solid rgba(148, 163, 184, 0.25);
+  border-radius: 0.65rem;
+  background: rgba(15, 23, 42, 0.45);
+}
+
+.profile-manager input {
+  width: 100%;
+  border: 1px solid #475569;
+  border-radius: 0.45rem;
+  background: #0b1220;
+  color: #e2e8f0;
+  padding: 0.45rem;
+}
+
 .training-grid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
