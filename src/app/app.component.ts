@@ -7,6 +7,7 @@ import { MonteCarloAgent } from './agents/monte-carlo-agent';
 import { QLearningAgent, QLearningTrainingConfig } from './agents/q-learning-agent';
 import { RandomAgent } from './agents/random-agent';
 import { TicTacToeEngine } from './tic-tac-toe.engine';
+import { APP_VERSION } from './version';
 
 type QLearningProfileId = 'A' | 'B' | 'C';
 type OverlayAssistantType = 'OFF' | 'MONTE_CARLO' | 'MINIMAX' | 'Q_LEARNING';
@@ -82,6 +83,7 @@ export class AppComponent implements OnInit, OnDestroy {
   ];
   protected overlayAssistant: OverlayAssistantType = 'OFF';
   protected monteCarloOverlay: Map<number, number> = new Map();
+  protected readonly appVersion = APP_VERSION;
 
   private readonly randomMoveDelayMs = 550;
   private readonly monteCarloSimulationCount = 700;
