@@ -1,14 +1,20 @@
 {
   "name": "tic-tac-toe",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "private": true,
   "scripts": {
     "ng": "ng",
+    "prestart": "node scripts/sync-version.mjs",
     "start": "ng serve",
+    "prebuild": "node scripts/sync-version.mjs",
     "build": "ng build",
     "watch": "ng build --watch --configuration development",
     "test": "jest --runInBand",
-    "build:gh-pages": "ng build --configuration production --base-href /tic-tac-toe/"
+    "build:gh-pages": "ng build --configuration production --base-href /tic-tac-toe/",
+    "version:sync": "node scripts/sync-version.mjs",
+    "version:bump": "node scripts/bump-version.mjs patch",
+    "version:bump:minor": "node scripts/bump-version.mjs minor",
+    "version:bump:major": "node scripts/bump-version.mjs major"
   },
   "dependencies": {
     "@angular/animations": "^19.0.0",

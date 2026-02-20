@@ -23,6 +23,16 @@ describe('AppComponent', () => {
     expect(compiled.querySelector('.status')?.textContent).toContain('現在の手番: X');
   });
 
+
+  it('should show app version in footer', () => {
+    const fixture = TestBed.createComponent(AppComponent);
+    fixture.detectChanges();
+
+    const compiled = fixture.nativeElement as HTMLElement;
+    expect(compiled.querySelector('.app-version')?.textContent).toContain('Version');
+    expect(compiled.querySelector('.app-version')?.textContent).toMatch(/\d+\.\d+\.\d+/);
+  });
+
   it('should render a 3x3 board', () => {
     const fixture = TestBed.createComponent(AppComponent);
     fixture.detectChanges();

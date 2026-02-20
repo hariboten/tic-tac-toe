@@ -36,6 +36,26 @@
 - [Qエージェント（Q学習）のリファクタリング計画](docs/q-learning-agent-refactor-plan.md)
 - [Q学習エージェント複数管理の計画・仕様](docs/q-learning-multi-agent-plan.md)
 
+
+## バージョン運用
+
+- 画面下部に現在のアプリバージョンが表示されます。
+- `package.json` と画面表示用 `src/app/version.ts` は同期して管理します。
+
+```bash
+npm run version:sync
+```
+
+- バージョンを自動更新するには次を使用します。
+
+```bash
+npm run version:bump
+npm run version:bump:minor
+npm run version:bump:major
+```
+
+`version:bump` はパッチ番号（例: `0.0.1` → `0.0.2`）を自動でインクリメントします。
+
 ## ローカル実行
 
 ```bash
