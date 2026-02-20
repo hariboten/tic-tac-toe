@@ -367,4 +367,64 @@ describe('AppComponent', () => {
     app.setTrainingProfile('B');
     expect(app.trainingConfig.episodes).toBe(5678);
   });
+
+  it('should add a q-learning profile and make it selectable', () => {
+    const fixture = TestBed.createComponent(AppComponent);
+    const app = fixture.componentInstance as any;
+    fixture.detectChanges();
+
+    app.switchTab('AGENT');
+    app.setAgentWorkspaceTab('TRAINING');
+    app.newProfileLabel = '検証用プロファイル';
+    app.createProfileFromInput();
+    fixture.detectChanges();
+
+    expect(app.trainingProfiles.length).toBe(4);
+    expect(app.selectedTrainingProfile.label).toBe('検証用プロファイル');
+    expect(app.selectedPlayProfile.label).toBe('検証用プロファイル');
+  });
+
+  it('should remove selected profile and fallback to another profile', () => {
+    const confirmSpy = jest.spyOn(window, 'confirm').mockReturnValue(true);
+    const fixture = TestBed.createComponent(AppComponent);
+    const app = fixture.componentInstance as any;
+    fixture.detectChanges();
+
+    app.switchTab('AGENT');
+    app.newProfileLabel = '削除対象';
+    app.createProfileFromInput();
+
+    const createdId = app.selectedTrainingProfileId;
+    app.removeSelectedTrainingProfile();
+    fixture.detectChanges();
+
+    expect(app.trainingProfiles.some((profile: { id: string }) => profile.id === createdId)).toBe(false);
+    expect(app.trainingProfiles.length).toBe(3);
+    expect(app.selectedTrainingProfileId).not.toBe(createdId);
+    expect(app.selectedPlayProfileId).not.toBe(createdId);
+
+    confirmSpy.mockRestore();
+  });
+
+  it('should keep at least one profile when removing profiles', () => {
+    const confirmSpy = jest.spyOn(window, 'confirm').mockReturnValue(true);
+    const fixture = TestBed.createComponent(AppComponent);
+    const app = fixture.componentInstance as any;
+    fixture.detectChanges();
+
+    app.switchTab('AGENT');
+    app.setTrainingProfile('C');
+    app.removeSelectedTrainingProfile();
+    app.setTrainingProfile('B');
+    app.removeSelectedTrainingProfile();
+    app.removeSelectedTrainingProfile();
+    fixture.detectChanges();
+
+    expect(app.trainingProfiles.length).toBe(1);
+
+    app.removeSelectedTrainingProfile();
+    expect(app.trainingProfiles.length).toBe(1);
+
+    confirmSpy.mockRestore();
+  });
 });
