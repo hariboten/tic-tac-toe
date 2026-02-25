@@ -121,6 +121,10 @@
           <strong>{{ selectedTrainingProfile.label }}</strong>
         </div>
         <div>
+          <span class="summary-label">プロファイル数</span>
+          <strong>{{ profileCount }}</strong>
+        </div>
+        <div>
           <span class="summary-label">学習状態</span>
           <strong>{{ isTrainingBusy }}</strong>
         </div>
@@ -138,6 +142,26 @@
 
       @if (activeAgentWorkspaceTab === 'TRAINING') {
         <section class="agent-workspace-panel" aria-label="agent training workspace">
+          <section class="profile-manager" aria-label="profile manager">
+            <label for="new-profile-label-input">
+              新規プロファイル名（任意）
+              <input
+                id="new-profile-label-input"
+                type="text"
+                [ngModel]="newProfileLabel"
+                (ngModelChange)="newProfileLabel = $event"
+                placeholder="未入力なら自動命名"
+              />
+            </label>
+
+            <div class="training-actions">
+              <button type="button" (click)="createProfileFromInput()" [disabled]="isTraining">プロファイル追加</button>
+              <button type="button" class="clear" (click)="removeSelectedTrainingProfile()" [disabled]="isTraining || profileCount <= 1">
+                選択中プロファイル削除
+              </button>
+            </div>
+          </section>
+
           <label>
             学習対象プロファイル
             <select
