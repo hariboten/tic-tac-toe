@@ -305,6 +305,30 @@ describe('AppComponent', () => {
     expect(compiled.querySelector('.overlay-status')?.textContent).toContain('ミニマックス');
   });
 
+
+  it('should apply heatmap background to available overlay cells', () => {
+    const fixture = TestBed.createComponent(AppComponent);
+    const app = fixture.componentInstance as any;
+
+    app.setOverlayAssistant('MINIMAX');
+    fixture.detectChanges();
+
+    const compiled = fixture.nativeElement as HTMLElement;
+    const heatmapLayer = compiled.querySelector('.cell .overlay-heatmap') as HTMLElement;
+    expect(heatmapLayer.style.background).toContain('rgba(');
+  });
+
+  it('should keep heatmap transparent for occupied cells', () => {
+    const fixture = TestBed.createComponent(AppComponent);
+    const app = fixture.componentInstance as any;
+
+    app.setOverlayAssistant('MINIMAX');
+    app.play(0);
+    fixture.detectChanges();
+
+    const occupiedBackground = app.overlayHeatmapBackground(0, app.board[0]);
+    expect(occupiedBackground).toBe('transparent');
+  });
   it('should show q-learning overlay when overlay assistant is q-learning', () => {
     const fixture = TestBed.createComponent(AppComponent);
     const app = fixture.componentInstance as any;

@@ -99,7 +99,8 @@
           [disabled]="cell !== null || winner !== null || isCurrentPlayerRandom"
           [attr.aria-label]="'マス ' + ($index + 1)"
         >
-          {{ cell }}
+          <span class="overlay-heatmap" [style.background]="overlayHeatmapBackground($index, cell)" aria-hidden="true"></span>
+          <span class="cell-symbol">{{ cell }}</span>
           @if (showOverlay && overlayWinRate($index) !== null && cell === null) {
             <span class="overlay-rate">{{ overlayWinRate($index) | number: '1.0-0' }}%</span>
           }
