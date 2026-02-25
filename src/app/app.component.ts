@@ -8,6 +8,7 @@ import { QLearningAgent, QLearningTrainingConfig } from './agents/q-learning-age
 import { RandomAgent } from './agents/random-agent';
 import { TicTacToeEngine } from './tic-tac-toe.engine';
 import { APP_VERSION } from './version';
+import { buildHeatmapScale, toHeatmapBackground } from './score-heatmap';
 
 type QLearningProfileId = string;
 type OverlayAssistantType = 'OFF' | 'MONTE_CARLO' | 'MINIMAX' | 'Q_LEARNING';
@@ -682,6 +683,20 @@ export class AppComponent implements OnInit, OnDestroy {
   protected overlayWinRate(index: number): number | null {
     const rate = this.monteCarloOverlay.get(index);
     return rate === undefined ? null : rate * 100;
+  }
+
+  protected overlayHeatmapBackground(index: number, cell: Cell): string {
+    if (cell !== null) {
+      return 'transparent';
+    }
+
+    const score = this.monteCarloOverlay.get(index);
+    if (score === undefined || !Number.isFinite(score)) {
+      return 'transparent';
+    }
+
+    const scale = buildHeatmapScale(Array.from(this.monteCarloOverlay.values()));
+    return toHeatmapBackground(score, scale);
   }
 
   private updateOverlay(): void {
